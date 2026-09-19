@@ -230,7 +230,6 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
           busy={busy}
           setBusy={setBusy}
           setError={setError}
-          run={run}
           refresh={refresh}
           refreshWorkspace={s.refresh}
         />

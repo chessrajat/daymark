@@ -1,5 +1,20 @@
-﻿# Explicitly opt in for local development; Dokploy should use compose.yaml only.
+﻿# Local development only. Dokploy should use compose.yaml alone.
 services:
   app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      AUTH_COOKIE_SECURE: "false"
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"
+    volumes:
+      - .:/app
+      - dev_node_modules:/app/node_modules
+      - dev_next:/app/.next
+volumes:
+  dev_node_modules:
+  dev_next:

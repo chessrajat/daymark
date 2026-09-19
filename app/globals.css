@@ -1319,3 +1319,181 @@ footer {
     padding: 20px;
   }
 }
+
+.update-entry {
+  background: #f7f9f4;
+  border: 1px solid #e9eee1;
+  border-radius: 8px;
+  padding: 12px;
+}
+.update-files {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+.update-files li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e1e7dc;
+  border-radius: 7px;
+  padding: 8px;
+  margin-top: 6px;
+  background: white;
+  font-size: 12px;
+}
+.update-files li > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.update-files small {
+  display: block;
+  color: #87917f;
+  font-size: 10px;
+  margin-top: 3px;
+}
+.update-files .attachment {
+  margin: 0;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+.update-files .attachment span {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.attachment-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  max-width: 100%;
+  padding: 12px 0 8px;
+  scrollbar-width: thin;
+}
+.attachment-tile {
+  flex: 0 0 112px;
+  width: 112px;
+  height: 112px;
+  border: 1px solid #dce4d7;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #edf2e9;
+}
+.attachment-tile > button,
+.attachment-tile > a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #708568;
+}
+.attachment-tile img,
+.attachment-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.attachment-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.93);
+  padding: 6px;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+.video-play {
+  position: absolute;
+  color: white;
+  filter: drop-shadow(0 1px 3px #000);
+}
+.pdf-thumbnail {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding-bottom: 16px;
+}
+.attachment-preview-dialog {
+  position: fixed;
+  z-index: 60;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100vw - 32px);
+  max-width: 1000px;
+  max-height: 94vh;
+  overflow: auto;
+  background: white;
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 20px 70px #0005;
+}
+.attachment-preview-body {
+  height: 65vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f2f3f0;
+  margin: 18px 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.attachment-preview-body img,
+.attachment-preview-body video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.attachment-preview-body iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Pending uploads stay compact; posted attachment previews use their own strip. */
+.attachment-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+.attachment-chips li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 180px;
+  width: 180px;
+  max-width: 100%;
+  height: 34px;
+  padding: 3px 5px 3px 9px;
+  border: 1px solid #dce4d7;
+  border-radius: 7px;
+  background: #f7f9f4;
+  color: #64765a;
+  font-size: 11px;
+}
+.attachment-chips li > svg { flex-shrink: 0; }
+.attachment-chip-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.attachment-chips li > button {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+}

@@ -29,6 +29,7 @@ export async function db() {
         CREATE TABLE IF NOT EXISTS my_days (task_id uuid REFERENCES tasks(id) ON DELETE CASCADE, day date NOT NULL, PRIMARY KEY(task_id, day));
         CREATE TABLE IF NOT EXISTS attachments (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), task_id uuid NOT NULL REFERENCES tasks(id) ON DELETE CASCADE, name text NOT NULL, content bytea NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
         CREATE TABLE IF NOT EXISTS events (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), task_id uuid NOT NULL REFERENCES tasks(id) ON DELETE CASCADE, kind text NOT NULL, message text NOT NULL, attachment_id uuid REFERENCES attachments(id), created_at timestamptz NOT NULL DEFAULT now());
+        CREATE TABLE IF NOT EXISTS event_attachments (event_id uuid NOT NULL REFERENCES events(id) ON DELETE CASCADE, attachment_id uuid NOT NULL REFERENCES attachments(id) ON DELETE CASCADE, PRIMARY KEY(event_id, attachment_id));
         CREATE INDEX IF NOT EXISTS events_task_idx ON events(task_id, created_at);
         CREATE INDEX IF NOT EXISTS tasks_project_idx ON tasks(project_id);
       `);

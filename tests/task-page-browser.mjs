@@ -66,12 +66,14 @@ try {
   await page.getByRole("button", { name: "Post update" }).click();
   await page.getByText("Task page update verified", { exact: true }).waitFor();
   await page
-    .getByLabel("Attach file", { exact: true })
+    .getByLabel("Attach files", { exact: true })
     .setInputFiles({
       name: "page.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("Task page attachment"),
     });
+  await page.getByLabel("Task update", {exact:true}).fill("Supporting attachment");
+  await page.getByRole("button", {name:"Post update"}).click();
   await page.getByRole("link", { name: "page.txt", exact: true }).waitFor();
   await page
     .getByRole("button", { name: "Add to My Day", exact: true })

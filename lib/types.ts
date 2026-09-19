@@ -42,6 +42,7 @@ export type Event = {
   created_at: string;
   attachment_id: string | null;
   attachment_name: string | null;
+  attachments: { id: string; name: string; size: number }[];
 };
 export type Data = {
   projects: Project[];

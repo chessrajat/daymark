@@ -110,3 +110,17 @@ PostgreSQL uses the default Compose-managed `postgres_data` named volume, scoped
 For local access use `docker compose -f compose.yaml -f compose.local.yaml up --build -d`. If local port 3000 is occupied, set APP_PORT to a free port (for example 3001). Do not include `compose.local.yaml` in Dokploy.
 Independent members have a Delete member action in People & teams. Confirmation is required. Deletion preserves tasks, history, attachments, and My Day entries; the member assignment is cleared and recorded in each affected task timeline. Team members must first be removed from their team. Run node tests/delete-member.mjs against a running app with AUTH_USERNAME and AUTH_PASSWORD configured to verify this workflow.
 
+
+Task updates now submit the message and selected attachments together. Select multiple files, remove unwanted selections, and click Post update. Each update displays its own downloadable files. Limits: 10 files, 10 MB per file, 25 MB total. A message is required. All files and the update are saved in one transaction; older standalone attachment entries remain readable. The schema adds event_attachments automatically. The multipart task endpoint accepts message and repeated files fields.
+
+
+## Local Docker hot reload
+
+Start development with:
+
+docker compose -f compose.yaml -f compose.local.yaml up --build -d
+
+Open http://localhost:3000 (or the configured APP_PORT). The local override uses Dockerfile.dev, mounts the source into /app, and runs next dev with Webpack polling so changes are detected on Docker Desktop. Next.js refreshes the browser for source/CSS edits. Linux dependencies and the Next.js cache live in separate development volumes.
+
+After package.json or package-lock.json changes, restart the app with docker compose -f compose.yaml -f compose.local.yaml restart app; npm ci runs at startup. After .env or Compose changes, rerun up -d --force-recreate app with both Compose files. Changes to server configuration may require a restart. Do not include compose.local.yaml in Dokploy; production still uses Dockerfile and the compiled app.
+

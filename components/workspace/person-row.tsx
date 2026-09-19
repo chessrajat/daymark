@@ -19,7 +19,9 @@ export function PersonRow({
     <tr>
       <td>
         <span className="member-table-name">
-          <span className="avatar">{m.name.slice(0, 2).toUpperCase()}</span>
+          <span className="avatar" aria-hidden="true">
+            {m.name.slice(0, 2).toUpperCase()}
+          </span>
           {m.name}
         </span>
       </td>

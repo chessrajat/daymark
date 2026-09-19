@@ -71,14 +71,25 @@ export async function POST(req: Request) {
           d.name,
         ])
       ).rows[0].id;
-    else if (d.action === "member")
+    else if (d.action === "member") {
+      const duplicate = await c.query(
+        "SELECT id FROM members WHERE lower(regexp_replace(btrim(name), '[[:space:]]+', ' ', 'g')) = lower(regexp_replace(btrim($1::text), '[[:space:]]+', ' ', 'g')) AND team_id IS NOT DISTINCT FROM $2::uuid",
+        [d.name, d.team_id],
+      );
+      if (duplicate.rowCount) {
+        await c.query("ROLLBACK");
+        return Response.json(
+          { error: "A member with this name already exists in this group." },
+          { status: 409 },
+        );
+      }
       id = (
         await c.query(
           "INSERT INTO members(name,team_id) VALUES($1,$2) RETURNING id",
           [d.name, d.team_id],
         )
       ).rows[0].id;
-    else if (d.action === "delete_member") {
+    } else if (d.action === "delete_member") {
       id = d.id;
       const member = (
         await c.query("SELECT * FROM members WHERE id=$1 FOR UPDATE", [id])

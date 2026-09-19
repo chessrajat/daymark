@@ -1,4 +1,6 @@
 "use client";
+import { AttachmentStrip } from "./attachment-strip";
+
 import { type Event } from "@/lib/types";
 import { Circle, MessageSquare, Paperclip } from "lucide-react";
 const stamp = (s: string) =>
@@ -36,18 +38,23 @@ export function TaskTimeline({
               )}
             </span>
             <div>
-              <p className={e.kind === "update" ? "comment" : ""}>
-                {e.message}
-              </p>
-              {e.attachment_id && (
-                <a
-                  className="attachment"
-                  href={`/api/attachments/${e.attachment_id}`}
-                >
-                  <Paperclip size={13} />
-                  {e.attachment_name}
-                </a>
-              )}
+              <div className={e.kind === "update" ? "update-entry" : ""}>
+                <p>{e.message}</p>
+                {e.attachments?.length || e.attachment_id ? (
+                  <AttachmentStrip
+                    attachments={
+                      e.attachments?.length
+                        ? e.attachments
+                        : [
+                            {
+                              id: e.attachment_id!,
+                              name: e.attachment_name || "Attachment",
+                            },
+                          ]
+                    }
+                  />
+                ) : null}
+              </div>
               <time>{stamp(e.created_at)}</time>
             </div>
           </div>

@@ -77,7 +77,8 @@ try {
   await command({ action: "day", id, day: "2026-09-18", included: true });
   await command({ action: "day", id, day: "2026-09-18", included: true });
   const form = new FormData();
-  form.set("file", new Blob(["Attachment verification"]), "test.txt");
+  form.set("message", "Update with attachment");
+  form.set("files", new Blob(["Attachment verification"]), "test.txt");
   assert.equal(
     (await fetch(`${base}/api/tasks/${id}`, { method: "POST", body: form }))
       .status,
@@ -96,9 +97,9 @@ try {
         e.message.includes("Second member"),
     ),
   );
-  const attachment = events.find((e) => e.attachment_id);
+  const attachment = events.find((e) => e.attachments?.length);
   const download = await fetch(
-    `${base}/api/attachments/${attachment.attachment_id}`,
+    `${base}/api/attachments/${attachment.attachments[0].id}`,
   );
   assert.match(download.headers.get("content-disposition"), /attachment/);
   assert.equal(await download.text(), "Attachment verification");
@@ -168,7 +169,7 @@ try {
   );
   const memberEvents = await (await fetch(base + "/api/tasks/" + id)).json();
   assert.ok(memberEvents.some((e) => e.message.includes("removed from team")));
-  assert.ok(memberEvents.some((e) => e.attachment_id));
+  assert.ok(memberEvents.some((e) => e.attachments?.length));
   await command({ action: "delete_team", id: team }, 404);
   await command({ action: "delete_team", id: otherTeam });
   console.log(

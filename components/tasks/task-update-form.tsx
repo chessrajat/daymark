@@ -1,83 +1,121 @@
 "use client";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Paperclip } from "lucide-react";
+import { Paperclip, X } from "lucide-react";
 export function TaskUpdateForm({
   taskId,
   busy,
   setBusy,
   setError,
-  run,
   refresh,
   refreshWorkspace,
 }: {
   taskId: string;
   busy: boolean;
-  setBusy: (value: boolean) => void;
-  setError: (value: string) => void;
-  run: (body: unknown) => Promise<boolean>;
+  setBusy: (v: boolean) => void;
+  setError: (v: string) => void;
   refresh: () => Promise<void>;
   refreshWorkspace: () => Promise<void>;
 }) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [message, setMessage] = useState("");
   return (
     <form
       className="update-form"
       onSubmit={async (e) => {
         e.preventDefault();
-        const form = e.currentTarget;
-        const message = new FormData(form).get("message");
-        if (await run({ action: "update", id: taskId, message })) form.reset();
+        if (busy) return;
+        setBusy(true);
+        setError("");
+        try {
+          const form = new FormData();
+          form.set("message", message);
+          files.forEach((f) => form.append("files", f));
+          const r = await fetch("/api/tasks/" + taskId, {
+            method: "POST",
+            body: form,
+          });
+          const result = await r.json();
+          if (!r.ok) throw Error(result.error);
+          setMessage("");
+          setFiles([]);
+          await refresh();
+          await refreshWorkspace();
+        } catch (err) {
+          setError((err as Error).message);
+        } finally {
+          setBusy(false);
+        }
       }}
     >
       <textarea
         aria-label="Task update"
-        name="message"
-        placeholder="Add an update, a thought, or a small win…"
+        placeholder="Write an update and attach supporting files…"
         required
         maxLength={10000}
         rows={3}
+        value={message}
+        disabled={busy}
+        onChange={(e) => setMessage(e.target.value)}
       />
+      {files.length > 0 && (
+        <ul className="attachment-chips" aria-label="Selected attachments">
+          {files.map((f, i) => (
+            <li key={i} title={`${f.name} (${Math.ceil(f.size / 1024)} KB)`}>
+              <Paperclip size={14} />
+              <span className="attachment-chip-name">{f.name}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={"Remove attachment " + f.name}
+                disabled={busy}
+                onClick={() =>
+                  setFiles(files.filter((_, index) => index !== i))
+                }
+              >
+                <X size={14} />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
       <div>
         <label className="upload">
           <Paperclip size={16} />
-          <span>Attach file</span>
+          <span>Add attachments</span>
           <input
-            aria-label="Attach file"
+            aria-label="Attach files"
             type="file"
+            multiple
             disabled={busy}
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              if (file.size > 10 * 1024 * 1024) {
-                setError("Maximum attachment size is 10 MB.");
+            onChange={(e) => {
+              const next = [...files, ...Array.from(e.target.files || [])];
+              e.target.value = "";
+              if (
+                next.length > 10 ||
+                next.some((f) => !f.size || f.size > 10 * 1024 * 1024)
+              ) {
+                setError(
+                  "Select up to 10 non-empty files, each no larger than 10 MB.",
+                );
                 return;
               }
-              setBusy(true);
-              setError("");
-              try {
-                const form = new FormData();
-                form.set("file", file);
-                const r = await fetch(`/api/tasks/${taskId}`, {
-                  method: "POST",
-                  body: form,
-                });
-                if (!r.ok) throw Error((await r.json()).error);
-                await refresh();
-                await refreshWorkspace();
-              } catch (err) {
-                setError((err as Error).message);
-              } finally {
-                setBusy(false);
-                e.target.value = "";
+              if (next.reduce((sum, f) => sum + f.size, 0) > 25 * 1024 * 1024) {
+                setError("Maximum combined attachment size is 25 MB.");
+                return;
               }
+              setError("");
+              setFiles(next);
             }}
           />
         </label>
-        <Button size="sm" disabled={busy}>
-          Post update
+        <Button size="sm" disabled={busy || !message.trim()}>
+          {busy ? "Posting…" : "Post update"}
         </Button>
       </div>
       <small className="muted">
-        Attachments up to 10 MB · saved with your task
+        Up to 10 files · 10 MB each · 25 MB total · uploaded when you post
       </small>
     </form>
   );

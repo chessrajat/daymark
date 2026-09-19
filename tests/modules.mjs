@@ -92,7 +92,8 @@ try {
   );
   await cmd({ action: "day", id: task, day: "2026-09-18", included: true });
   const form = new FormData();
-  form.set("file", new Blob(["Module file"]), "module.txt");
+  form.set("message", "Update with attachment");
+  form.set("files", new Blob(["Module file"]), "module.txt");
   assert.equal(
     (await fetch(base + "/api/tasks/" + task, { method: "POST", body: form }))
       .status,
@@ -100,7 +101,7 @@ try {
   );
   const attachment = (
     await (await fetch(base + "/api/tasks/" + task)).json()
-  ).find((e) => e.attachment_id).attachment_id;
+  ).find((e) => e.attachments?.length).attachments[0].id;
   await cmd(
     { action: "delete_project", id: p, confirmation: "Wrong name" },
     400,
