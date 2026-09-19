@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: daymark
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-daymark-local}
+      POSTGRES_DB: daymark
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U daymark -d daymark"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      AUTH_USERNAME: ${AUTH_USERNAME:?Set AUTH_USERNAME in .env}
+      AUTH_PASSWORD: ${AUTH_PASSWORD:?Set AUTH_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      DATABASE_URL: postgresql://daymark:${POSTGRES_PASSWORD:-daymark-local}@db:5432/daymark
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  postgres_data:
+     external: true
+     name: stmnf_postgres_data
