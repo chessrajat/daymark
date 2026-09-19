@@ -108,3 +108,5 @@ Deploy `compose.yaml` only. The app exposes internal port 3000 without binding h
 PostgreSQL uses the default Compose-managed `postgres_data` named volume, scoped to the deployment's project name. No external volume needs to be created. An existing external `stmnf_postgres_data` volume is not deleted or migrated automatically: back up and restore its data into the new managed volume if you need to retain that database. Do not run `down -v` on data you want to keep.
 
 For local access use `docker compose -f compose.yaml -f compose.local.yaml up --build -d`. If local port 3000 is occupied, set APP_PORT to a free port (for example 3001). Do not include `compose.local.yaml` in Dokploy.
+Independent members have a Delete member action in People & teams. Confirmation is required. Deletion preserves tasks, history, attachments, and My Day entries; the member assignment is cleared and recorded in each affected task timeline. Team members must first be removed from their team. Run node tests/delete-member.mjs against a running app with AUTH_USERNAME and AUTH_PASSWORD configured to verify this workflow.
+

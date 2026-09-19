@@ -78,7 +78,42 @@ export async function POST(req: Request) {
           [d.name, d.team_id],
         )
       ).rows[0].id;
-    else if (d.action === "remove_member" || d.action === "delete_team") {
+    else if (d.action === "delete_member") {
+      id = d.id;
+      const member = (
+        await c.query("SELECT * FROM members WHERE id=$1 FOR UPDATE", [id])
+      ).rows[0];
+      if (!member || member.team_id) {
+        await c.query("ROLLBACK");
+        return Response.json(
+          {
+            error: member
+              ? "Remove this member from their team before deleting them."
+              : "Member not found.",
+          },
+          { status: member ? 409 : 404 },
+        );
+      }
+      const changed = await c.query(
+        "UPDATE tasks SET member_id=NULL, assigned_at=CASE WHEN team_id IS NULL THEN NULL ELSE assigned_at END, updated_at=now() WHERE member_id=$1 RETURNING id,team_id",
+        [id],
+      );
+      for (const task of changed.rows) {
+        await c.query(
+          "INSERT INTO events(task_id,kind,message) VALUES($1,'assign',$2)",
+          [
+            task.id,
+            'Member "' +
+              member.name +
+              '" deleted. ' +
+              (task.team_id
+                ? "Team assignment retained."
+                : "Task is now unassigned."),
+          ],
+        );
+      }
+      await c.query("DELETE FROM members WHERE id=$1", [id]);
+    } else if (d.action === "remove_member" || d.action === "delete_team") {
       id = d.id;
       const teamId = d.action === "remove_member" ? d.team_id : d.id;
       const team = (

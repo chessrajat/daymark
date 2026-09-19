@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/lib/store";
 import { type Member, type Task } from "@/lib/types";
 import Link from "next/link";
+import { DeleteMember } from "./delete-member";
 import { TeamAction } from "./team-action";
 const closed = (t: Task) => ["Completed", "Dropped"].includes(t.status);
 export function PersonRow({
@@ -36,8 +37,10 @@ export function PersonRow({
               View tasks
             </Link>
           </Button>
-          {m.team_id && (
+          {m.team_id ? (
             <TeamAction id={m.id} name={m.name} teamId={m.team_id} />
+          ) : (
+            <DeleteMember id={m.id} name={m.name} />
           )}
         </div>
       </td>

@@ -22,6 +22,7 @@ export const commandSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("team"), name }),
   z.object({ action: z.literal("remove_member"), id: uuid, team_id: uuid }),
   z.object({ action: z.literal("delete_team"), id: uuid }),
+  z.object({ action: z.literal("delete_member"), id: uuid }),
   z.object({ action: z.literal("member"), name, team_id: uuid.nullable() }),
   z.object({
     action: z.literal("task"),
