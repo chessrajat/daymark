@@ -7,7 +7,7 @@ A single-user task workspace built with Next.js App Router, TypeScript, PostgreS
 Install Docker with Compose, then run from this directory:
 
 ```sh
-docker compose up --build -d
+docker compose -f compose.yaml -f compose.local.yaml up --build -d
 ```
 
 Open http://localhost:3000. The database schema initializes automatically on the first API request. The app starts empty, with prompts to create your first project.
@@ -17,7 +17,7 @@ docker compose logs -f app
 docker compose down
 ```
 
-Stopping containers preserves data. `docker compose down -v` deletes the database volume and all tasks and attachments. The app binds to localhost by default.
+Stopping containers preserves data. `docker compose down -v` deletes the database volume and all tasks and attachments. The local override binds the app to localhost. The base Compose file publishes no host ports.
 
 ## Workflows
 
@@ -100,3 +100,11 @@ All tasks supports combined status, project, module, team, member, priority, and
 Workspace navigation, overview, people table, module sidebar, task rows, filters, creation dialogs, and team/project actions live in `components/workspace/`. `components/workspace.tsx` composes these views. Task pages use `app/tasks/[id]/page.tsx` and the components in `components/tasks/`: page loading/navigation, detail controls, timeline, and update/attachment composer. The obsolete selected-task dialog state has been removed from Zustand.
 
 Task links support direct navigation and reload. Back to tasks preserves the originating list URL, including filters. Activity sits on the right on desktop and below task details on mobile. The route requires authentication and handles missing or deleted tasks. Run `tests/task-page-browser.mjs` with the documented Playwright environment to verify these workflows.
+
+## Dokploy deployment
+
+Deploy `compose.yaml` only. The app exposes internal port 3000 without binding host port 3000, avoiding conflicts with Dokploy or other services. In Dokploy Domains, select service `app`, container port `3000`, and your domain; enable HTTPS. Set `AUTH_COOKIE_SECURE=true` for HTTPS and configure AUTH_USERNAME, AUTH_PASSWORD, JWT_SECRET, and POSTGRES_PASSWORD in Dokploy's environment settings. Redeploy after saving the domain and environment.
+
+PostgreSQL uses the default Compose-managed `postgres_data` named volume, scoped to the deployment's project name. No external volume needs to be created. An existing external `stmnf_postgres_data` volume is not deleted or migrated automatically: back up and restore its data into the new managed volume if you need to retain that database. Do not run `down -v` on data you want to keep.
+
+For local access use `docker compose -f compose.yaml -f compose.local.yaml up --build -d`. If local port 3000 is occupied, set APP_PORT to a free port (for example 3001). Do not include `compose.local.yaml` in Dokploy.

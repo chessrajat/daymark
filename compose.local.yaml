@@ -1,0 +1,5 @@
+﻿# Explicitly opt in for local development; Dokploy should use compose.yaml only.
+services:
+  app:
+    ports:
+      - "127.0.0.1:${APP_PORT:-3000}:3000"

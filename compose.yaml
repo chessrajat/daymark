@@ -15,8 +15,8 @@ services:
     restart: unless-stopped
   app:
     build: .
-    ports:
-      - "127.0.0.1:3000:3000"
+    expose:
+      - "3000"
     environment:
       AUTH_USERNAME: ${AUTH_USERNAME:?Set AUTH_USERNAME in .env}
       AUTH_PASSWORD: ${AUTH_PASSWORD:?Set AUTH_PASSWORD in .env}
@@ -29,5 +29,3 @@ services:
     restart: unless-stopped
 volumes:
   postgres_data:
-     external: true
-     name: stmnf_postgres_data
