@@ -14,7 +14,10 @@ export async function GET(
   const a = (
     await (
       await db()
-    ).query("SELECT name,content FROM attachments WHERE id=$1", [id])
+    ).query(
+      "SELECT name,content FROM attachments WHERE id=$1 UNION ALL SELECT name,content FROM note_attachments WHERE id=$1",
+      [id],
+    )
   ).rows[0];
   if (!a) return new Response("Not found", { status: 404 });
 

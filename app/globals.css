@@ -1483,7 +1483,9 @@ footer {
   color: #64765a;
   font-size: 11px;
 }
-.attachment-chips li > svg { flex-shrink: 0; }
+.attachment-chips li > svg {
+  flex-shrink: 0;
+}
 .attachment-chip-name {
   flex: 1;
   min-width: 0;
@@ -1496,4 +1498,32 @@ footer {
   width: 24px;
   height: 24px;
   padding: 0;
+}
+
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.note-card {
+  min-width: 0;
+  border: 1px solid #e2e7dc;
+  background: white;
+  border-radius: 12px;
+  padding: 22px;
+}
+.note-card h2 {
+  overflow-wrap: anywhere;
+}
+.note-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  margin: 15px 0;
+  color: #63705b;
+}
+@media (max-width: 760px) {
+  .sidebar > nav:first-of-type {
+    flex-wrap: wrap;
+  }
 }

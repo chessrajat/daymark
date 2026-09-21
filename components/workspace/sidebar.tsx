@@ -2,7 +2,15 @@
 import { APP_VERSION } from "@/version";
 import { useWorkspace } from "@/lib/store";
 import { type Task } from "@/lib/types";
-import { LayoutGrid, Leaf, ListTodo, Plus, Sun, Users } from "lucide-react";
+import {
+  FileText,
+  LayoutGrid,
+  Leaf,
+  ListTodo,
+  Plus,
+  Sun,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 const closed = (t: Task) => ["Completed", "Dropped"].includes(t.status);
 function useWorkspaceState() {
@@ -36,6 +44,7 @@ export function WorkspaceSidebar({
             ["my-day", "/my-day", "My Day", Sun],
             ["tasks", "/tasks", "All tasks", ListTodo],
             ["teams", "/teams", "People & teams", Users],
+            ["notes", "/notes", "Notes", FileText],
           ].map(([key, href, label, Icon]) => {
             const I = Icon as typeof Sun;
             return (
