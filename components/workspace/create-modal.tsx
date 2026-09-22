@@ -45,7 +45,7 @@ export function CreateModal({
         action: kind,
         ...f,
         ...(kind === "module" ? { project_id: projectId } : {}),
-        ...(kind === "task" ? { module_id: chosenModule || null } : {}),
+        ...(kind === "task" ? { module_id: chosenModule || null, target_date: f.target_date || null } : {}),
         ...(kind === "member" ? { team_id: f.team_id || null } : {}),
       });
       close();
@@ -152,6 +152,10 @@ export function CreateModal({
                         </option>
                       ))}
                   </select>
+                </label>
+                <label>
+                  Target date (optional)
+                  <input type="date" name="target_date" max="9999-12-31" />
                 </label>
                 <label>
                   Priority

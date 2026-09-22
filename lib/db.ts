@@ -7,6 +7,7 @@ const schema = `
         CREATE TABLE IF NOT EXISTS tasks (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), project_id uuid NOT NULL REFERENCES projects(id), title text NOT NULL, description text NOT NULL DEFAULT '', status text NOT NULL DEFAULT 'To do' CHECK (status IN ('To do','In progress','Blocked','Completed','Dropped')), priority text NOT NULL DEFAULT 'Medium', member_id uuid REFERENCES members(id), team_id uuid REFERENCES teams(id), assigned_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
         CREATE TABLE IF NOT EXISTS modules (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE, name text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(id,project_id));
         ALTER TABLE tasks ADD COLUMN IF NOT EXISTS module_id uuid;
+        ALTER TABLE tasks ADD COLUMN IF NOT EXISTS target_date date;
         DO $$ BEGIN
           IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tasks_module_project_fk' AND conrelid='tasks'::regclass) THEN
             ALTER TABLE tasks ADD CONSTRAINT tasks_module_project_fk FOREIGN KEY(module_id,project_id) REFERENCES modules(id,project_id);

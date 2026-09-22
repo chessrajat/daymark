@@ -27,6 +27,7 @@ export type Task = {
   description: string;
   status: (typeof statuses)[number];
   priority: string;
+  target_date: string | null;
   member_id: string | null;
   team_id: string | null;
   assigned_at: string | null;

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Paperclip, X } from "lucide-react";
 export function TaskUpdateForm({
   taskId,
+  targetDate,
   busy,
   setBusy,
   setError,
@@ -11,6 +12,7 @@ export function TaskUpdateForm({
   refreshWorkspace,
 }: {
   taskId: string;
+  targetDate: string | null;
   busy: boolean;
   setBusy: (v: boolean) => void;
   setError: (v: string) => void;
@@ -19,6 +21,7 @@ export function TaskUpdateForm({
 }) {
   const [files, setFiles] = useState<File[]>([]);
   const [message, setMessage] = useState("");
+  const [dateDraft, setDateDraft] = useState<string | undefined>(undefined);
   return (
     <form
       className="update-form"
@@ -30,6 +33,7 @@ export function TaskUpdateForm({
         try {
           const form = new FormData();
           form.set("message", message);
+          if (dateDraft !== undefined) form.set("target_date", dateDraft);
           files.forEach((f) => form.append("files", f));
           const r = await fetch("/api/tasks/" + taskId, {
             method: "POST",
@@ -39,6 +43,7 @@ export function TaskUpdateForm({
           if (!r.ok) throw Error(result.error);
           setMessage("");
           setFiles([]);
+          setDateDraft(undefined);
           await refresh();
           await refreshWorkspace();
         } catch (err) {
@@ -58,6 +63,17 @@ export function TaskUpdateForm({
         disabled={busy}
         onChange={(e) => setMessage(e.target.value)}
       />
+      <label className="update-target-date">
+        Target date (optional)
+        <input
+          type="date"
+          max="9999-12-31"
+          value={dateDraft ?? targetDate ?? ""}
+          disabled={busy}
+          onChange={(e) => setDateDraft(e.target.value)}
+        />
+        <small className="muted">Change or clear the task's target date with this update. Explain changes in your update.</small>
+      </label>
       {files.length > 0 && (
         <ul className="attachment-chips" aria-label="Selected attachments">
           {files.map((f, i) => (

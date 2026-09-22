@@ -1527,3 +1527,9 @@ footer {
     flex-wrap: wrap;
   }
 }
+
+.update-target-date { display: grid; gap: 6px; margin: 12px 0; font-size: 13px; }
+.update-target-date input { width: 100%; min-width: 0; }
+.target-date { font-size: 13px; color: var(--muted-foreground, #78716c); }
+.target-date.overdue { color: #b91c1c; }
+.event p { white-space: pre-wrap; }

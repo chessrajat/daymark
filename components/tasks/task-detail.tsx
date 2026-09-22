@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/lib/store";
 import { assignedDays, statuses, type Event, type Task } from "@/lib/types";
+import { isOverdue } from "@/lib/target-date";
 import { Folder, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TaskTimeline } from "./task-timeline";
@@ -118,13 +119,17 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
             {t.my_days.includes(day) ? "Remove from My Day" : "Add to My Day"}
           </Button>
         </div>
+        <p className={isOverdue(t.target_date, t.status, day) ? "target-date overdue" : "target-date"}>
+          Target date: {t.target_date || "Not set"}
+          {isOverdue(t.target_date, t.status, day) && " - Overdue"}
+        </p>
         {editing ? (
           <form
             className="form-stack mt-4"
             onSubmit={async (e) => {
               e.preventDefault();
               const fields = Object.fromEntries(new FormData(e.currentTarget));
-              if (await run({ action: "edit", id: t.id, ...fields }))
+              if (await run({ action: "edit", id: t.id, ...fields, target_date: fields.target_date || null }))
                 setEditing(false);
             }}
           >
@@ -144,6 +149,10 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
                 defaultValue={t.description}
                 maxLength={10000}
               />
+            </label>
+            <label>
+              Target date (optional)
+              <input type="date" name="target_date" defaultValue={t.target_date || ""} max="9999-12-31" disabled={busy} />
             </label>
             <label>
               Priority
@@ -227,6 +236,7 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
         <TaskTimeline events={events} loading={loading} />
         <TaskUpdateForm
           taskId={t.id}
+          targetDate={t.target_date}
           busy={busy}
           setBusy={setBusy}
           setError={setError}

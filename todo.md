@@ -1,7 +1,7 @@
 docker compose -f compose.yaml -f compose.local.yaml up --build 
 
 # Team and members
-- add target date for the task or the updates.
+- add target date for the task or the updates we post. (UI to show the way when target dates are changed)
 - add a filter in the tasks page to view the unassigned tasks.
 - allow to add the due date for the task.
 - In the new task dialog box, the drop downs selection make them two rows and two columns with a new option assignee to assign the task when creating, can be empty if just want to create the task, also add the due date option when creating the task

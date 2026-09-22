@@ -1,6 +1,7 @@
 import { authGuard } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { commandSchema } from "@/lib/validation";
+import { targetDateChange } from "@/lib/target-date";
 export const runtime = "nodejs";
 export async function GET(req: Request) {
   const denied = await authGuard(req);
@@ -12,7 +13,7 @@ export async function GET(req: Request) {
       p.query("SELECT * FROM teams ORDER BY name"),
       p.query("SELECT * FROM members ORDER BY name"),
       p.query(
-        "SELECT t.*, COALESCE((SELECT json_agg(to_char(day, 'YYYY-MM-DD')) FROM my_days WHERE task_id=t.id),'[]'::json) AS my_days FROM tasks t ORDER BY created_at DESC",
+        "SELECT t.*, to_char(t.target_date, 'YYYY-MM-DD') AS target_date, COALESCE((SELECT json_agg(to_char(day, 'YYYY-MM-DD')) FROM my_days WHERE task_id=t.id),'[]'::json) AS my_days FROM tasks t ORDER BY created_at DESC",
       ),
       p.query("SELECT * FROM modules ORDER BY created_at, id"),
     ]);
@@ -228,8 +229,8 @@ export async function POST(req: Request) {
       }
       id = (
         await c.query(
-          "INSERT INTO tasks(project_id,title,description,priority,module_id) VALUES($1,$2,$3,$4,$5) RETURNING id",
-          [d.project_id, d.title, d.description, d.priority, d.module_id],
+          "INSERT INTO tasks(project_id,title,description,priority,module_id,target_date) VALUES($1,$2,$3,$4,$5,$6) RETURNING id",
+          [d.project_id, d.title, d.description, d.priority, d.module_id, d.target_date],
         )
       ).rows[0].id;
       const moduleName = d.module_id
@@ -239,10 +240,11 @@ export async function POST(req: Request) {
       message = moduleName
         ? "Task created in module: " + moduleName
         : "Task created";
+      if (d.target_date) message += `\nTarget date: ${d.target_date}`;
     } else {
       id = d.id;
       const t = (
-        await c.query("SELECT * FROM tasks WHERE id=$1 FOR UPDATE", [id])
+        await c.query("SELECT *, to_char(target_date, 'YYYY-MM-DD') AS target_date FROM tasks WHERE id=$1 FOR UPDATE", [id])
       ).rows[0];
       if (!t) {
         await c.query("ROLLBACK");
@@ -333,6 +335,13 @@ export async function POST(req: Request) {
         message = `Assignment changed from ${[oldM, oldT].filter(Boolean).join(" · ") || "Unassigned"} to ${[m?.name, team?.name].filter(Boolean).join(" · ") || "Unassigned"}`;
       }
       if (d.action === "update") message = d.message;
+      if ((d.action === "edit" || d.action === "update") && d.target_date !== undefined) {
+        const change = targetDateChange(t.target_date, d.target_date);
+        if (change) {
+          await c.query("UPDATE tasks SET target_date=$2 WHERE id=$1", [id, d.target_date]);
+          message += `\n${change}`;
+        }
+      }
       if (d.action === "day") {
         const result = d.included
           ? await c.query(

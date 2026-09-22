@@ -1,7 +1,8 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/lib/store";
-import { assignedDays, type Task } from "@/lib/types";
+import { isOverdue } from "@/lib/target-date";
+import { assignedDays, localDay, type Task } from "@/lib/types";
 import { Check, Clock3, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -44,6 +45,11 @@ export function TaskRow({ task: t, day }: { task: Task; day: string }) {
                 · {t.priority}
               </span>
             </small>
+            {t.target_date && (
+              <small className={isOverdue(t.target_date, t.status, localDay()) ? "target-date overdue" : "target-date"}>
+                Target: {t.target_date}{isOverdue(t.target_date, t.status, localDay()) && " - Overdue"}
+              </small>
+            )}
           </span>
         </Link>
         <span

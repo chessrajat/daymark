@@ -87,7 +87,6 @@ export function Workspace() {
         <div className="page">
           <div className="page-heading">
             <div>
-              <p className="eyebrow">YOUR SPACE TO MAKE PROGRESS</p>
               <h1>
                 {project?.name ||
                   {

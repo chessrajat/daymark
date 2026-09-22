@@ -2,6 +2,7 @@ import { z } from "zod";
 import { statuses } from "./types";
 const name = z.string().trim().min(1).max(200);
 const uuid = z.uuid();
+export const targetDateSchema = z.iso.date().nullable();
 export const commandSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("project"),
@@ -31,6 +32,7 @@ export const commandSchema = z.discriminatedUnion("action", [
     title: name,
     description: z.string().max(10000).default(""),
     priority: z.enum(["Low", "Medium", "High"]).default("Medium"),
+    target_date: targetDateSchema.default(null),
   }),
   z.object({
     action: z.literal("edit"),
@@ -38,6 +40,7 @@ export const commandSchema = z.discriminatedUnion("action", [
     title: name,
     description: z.string().max(10000),
     priority: z.enum(["Low", "Medium", "High"]),
+    target_date: targetDateSchema.optional(),
   }),
   z.object({ action: z.literal("status"), id: uuid, status: z.enum(statuses) }),
   z.object({
@@ -50,6 +53,7 @@ export const commandSchema = z.discriminatedUnion("action", [
     action: z.literal("update"),
     id: uuid,
     message: z.string().trim().min(1).max(10000),
+    target_date: targetDateSchema.optional(),
   }),
   z.object({
     action: z.literal("day"),
