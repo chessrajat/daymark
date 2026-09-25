@@ -1,4 +1,4 @@
-﻿import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 const base = process.env.TEST_BASE_URL || "http://localhost:3000";
 const request = (path, options = {}) =>
@@ -42,7 +42,7 @@ assert.equal(r.status, 200);
 const set = r.headers.get("set-cookie");
 assert.match(set, /HttpOnly/i);
 assert.match(set, /SameSite=strict/i);
-assert.match(set, /Max-Age=28800/i);
+assert.match(set, /Max-Age=604800/i);
 const cookie = set.split(";")[0];
 const token = cookie.split("=")[1];
 assert.equal(token.split(".").length, 3);
@@ -72,6 +72,7 @@ assert.equal(
 const claims = JSON.parse(
   Buffer.from(token.split(".")[1], "base64url").toString(),
 );
+assert.equal(claims.exp - claims.iat, 7 * 24 * 60 * 60);
 const unsigned =
   Buffer.from(JSON.stringify({ alg: "HS256" })).toString("base64url") +
   "." +

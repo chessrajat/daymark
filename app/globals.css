@@ -1304,7 +1304,7 @@ footer {
   margin-top: 0;
 }
 .task-activity-panel .timeline {
-  max-height: 55vh;
+  max-height: 70dvh;
   overflow-y: auto;
   padding-right: 10px;
 }
@@ -1320,7 +1320,6 @@ footer {
     padding: 20px;
   }
 }
-
 .update-entry {
   background: #f7f9f4;
   border: 1px solid #e9eee1;
@@ -1534,3 +1533,308 @@ footer {
 .target-date { font-size: 13px; color: var(--muted-foreground, #78716c); }
 .target-date.overdue { color: #b91c1c; }
 .event p { white-space: pre-wrap; }
+/* Task update composer */
+.task-activity-panel .update-form {
+  margin-top: 20px;
+  padding: 22px;
+  border: 1px solid #dce6e4;
+  border-radius: 12px;
+  background: #fff;
+}
+.update-form .update-message,
+.update-form .update-field textarea,
+.update-form .update-field select,
+.update-form .update-field input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #d5dfe5;
+  border-radius: 8px;
+  background: white;
+  color: #1d2937;
+  font-size: 14px;
+}
+.update-form .update-message {
+  min-height: 112px;
+  padding: 14px;
+  resize: vertical;
+}
+.update-form .update-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  color: #1d2937;
+  font-size: 14px;
+  font-weight: 500;
+}
+.update-form .update-field textarea { min-height: 75px; padding: 12px; }
+.update-form .update-field select,
+.update-form .update-field input { min-height: 42px; padding: 8px 12px; }
+.update-date-clear {
+  padding: 10px 0;
+  color: #126f5e;
+  font-size: 12px;
+  text-decoration: underline;
+}
+.update-form .update-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 22px 0 8px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8ec;
+}
+.update-actions-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  min-width: 0;
+}
+.update-form .update-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 0;
+  background: transparent;
+  color: #126f5e;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.update-form .update-action:disabled { opacity: .55; cursor: default; }
+.update-date-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #e3f5f0;
+  color: #184c43;
+  font-size: 12px;
+  cursor: pointer;
+}
+.update-date-picker {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.update-date-chip:focus-within {
+  outline: 2px solid #0f766e;
+  outline-offset: 3px;
+}
+.update-form :is(.update-action, .update-date-clear):focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 3px;
+}
+.update-form > small { font-size: 10px; }
+@media (max-width: 500px) {
+  .task-activity-panel .update-form { padding: 16px; }
+  .update-form .update-actions > button { width: 100%; }
+}
+
+.update-form-error { margin: 12px 0 0; color: #b91c1c; font-size: 12px; }
+
+/* Activity cards and bottom composer */
+.task-activity-panel .timeline-heading {
+  display: block;
+  margin: 0 0 22px;
+}
+.task-activity-panel .timeline-heading h3 {
+  color: #1f2937;
+  font-size: 23px;
+  font-weight: 700;
+}
+.task-activity-panel .timeline-heading p {
+  margin-top: 3px;
+  color: #657185;
+  font-size: 13px;
+}
+.task-activity-panel .timeline {
+  padding: 0 10px 0 2px;
+}
+.activity-item {
+  display: grid;
+  grid-template-columns: 36px minmax(74px, 94px) minmax(0, 1fr);
+  gap: 10px;
+  position: relative;
+  padding-bottom: 18px;
+  align-items: start;
+}
+.activity-item::before {
+  content: "";
+  position: absolute;
+  left: 17px;
+  top: 23px;
+  bottom: -4px;
+  width: 2px;
+  background: #dce3eb;
+}
+.activity-item:last-child::before { display: none; }
+.activity-marker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e0f6e9;
+  color: #147a52;
+}
+.activity-marker-update { background: #dcecff; color: #214b93; }
+.activity-marker-changes,
+.activity-marker-system { background: #e9edf3; color: #536177; }
+.activity-time {
+  padding-top: 9px;
+  color: #627087;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.activity-card {
+  min-width: 0;
+  padding: 15px 17px;
+  border: 1px solid #dce4ee;
+  border-radius: 10px;
+  background: #f9fbff;
+}
+.activity-card-update {
+  background: #f0f7ff;
+  border-color: #c9ddfd;
+}
+.activity-card h4 {
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 700;
+}
+.activity-card .activity-card-subtitle,
+.activity-card .activity-card-note {
+  margin-top: 5px;
+  color: #5e6d82;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.activity-card .activity-note {
+  margin-top: 11px;
+  padding: 11px 12px;
+  border-radius: 8px;
+  background: white;
+  color: #263245;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.activity-changes {
+  margin-top: 10px;
+  padding: 2px 10px;
+  border-radius: 8px;
+  background: white;
+}
+.activity-change-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 0;
+  color: #263245;
+  font-size: 11px;
+}
+.activity-change-row + .activity-change-row { border-top: 1px solid #e5ebf2; }
+.activity-change-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #0d7656;
+  background: #e1f8eb;
+}
+.activity-change-dependency { color: #4f46b4; background: #eeebff; }
+.activity-change-targetDate { color: #b45309; background: #fff1df; }
+.activity-change-label { flex: 1 1 95px; font-weight: 500; }
+.activity-change-values { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 5px; min-width: 0; }
+.activity-value-old,
+.activity-value-new,
+.activity-dependency-value {
+  max-width: 100%;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: #eef2f6;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.activity-value-new { background: #e2f7ea; }
+.activity-change-values > svg { color: #99a6b8; }
+.activity-card .attachment-strip { margin-top: 10px; }
+
+.task-update-dock {
+  position: fixed;
+  z-index: 30;
+  left: 50%;
+  width: calc(100% - 64px);
+  max-width: 1386px;
+  transform: translateX(-50%);
+  bottom: clamp(12px, 2vh, 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  border-radius: 14px;
+  box-shadow: 0 14px 38px rgb(24 38 45 / 18%);
+}
+.task-update-dock .update-form {
+  margin: 0;
+  padding: 14px 18px;
+  border: 1px solid #dce5e9;
+  border-radius: 14px;
+  background: white;
+}
+.task-update-dock .update-message {
+  min-height: 48px;
+  padding: 10px 12px;
+}
+.task-update-dock .update-field { margin-top: 8px; }
+.task-update-dock .update-actions {
+  margin: 8px 0 2px;
+  padding-top: 0;
+  border: 0;
+}
+.task-update-dock .update-status-control select {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #d5dfe5;
+  background: white;
+  color: #1d2937;
+  font-size: 12px;
+}
+.task-update-dock .update-form > small { display: block; margin-top: 3px; }
+@media (max-width: 650px) {
+  .task-update-dock .update-form { padding: 12px; }
+  .task-update-dock .update-actions > button { width: 100%; }
+  .activity-item { grid-template-columns: 36px minmax(0, 1fr); }
+  .activity-time { grid-column: 2; grid-row: 1; }
+  .activity-card { grid-column: 2; grid-row: 2; }
+}
+.task-update-dock .update-status-control { position: relative; display: inline-flex; align-items: center; }
+.task-update-dock .update-status-control::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #46ad69;
+  pointer-events: none;
+}
+.task-update-dock .update-status-control select { padding-left: 25px; }
+@media (max-width: 850px) {
+  .task-update-dock { width: calc(100% - 36px); }
+}

@@ -3,7 +3,8 @@ import { authGuard } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { targetDateSchema } from "@/lib/validation";
-import { targetDateChange } from "@/lib/target-date";
+import { isPastTargetDateChange, targetDateChange } from "@/lib/target-date";
+import { localDay } from "@/lib/types";
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -90,6 +91,11 @@ export async function POST(
     if (!task.rowCount) {
       await c.query("ROLLBACK");
       return Response.json({ error: "Task not found." }, { status: 404 });
+    }
+    if (targetDate.data !== undefined &&
+      isPastTargetDateChange(task.rows[0].target_date, targetDate.data, localDay())) {
+      await c.query("ROLLBACK");
+      return Response.json({ error: "Target date cannot be earlier than today." }, { status: 400 });
     }
     let change;
     try { change = statusChange(task.rows[0], statusUpdate.data); }

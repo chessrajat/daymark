@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 export const COOKIE = "daymark_session";
-export const TTL = 8 * 60 * 60;
+export const TTL = 7 * 24 * 60 * 60;
 function config() {
   const {
     AUTH_USERNAME: username,
@@ -42,7 +42,7 @@ export async function issueToken() {
     .setIssuer("daymark")
     .setAudience("daymark-app")
     .setIssuedAt()
-    .setExpirationTime("8h")
+    .setExpirationTime(`${TTL}s`)
     .sign(new TextEncoder().encode(c.secret));
 }
 export async function verifyToken(token?: string) {

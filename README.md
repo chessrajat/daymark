@@ -85,7 +85,7 @@ Credentials are set in `.env`: `AUTH_USERNAME=admin` and `AUTH_PASSWORD=Daymark@
 
 Run `docker compose up -d --force-recreate app` after changing credentials or the signing secret. Existing tokens become invalid when any of these values change. Sessions use HS256 JWTs with issuer/audience checks, an eight-hour expiry, and HttpOnly, SameSite=Strict cookies. Set `AUTH_COOKIE_SECURE=true` when using HTTPS; false supports the local HTTP setup. Passwords and signing keys stay on the server and are never NEXT_PUBLIC variables.
 
-Use Sign out in the top bar to clear the browser session. JWT logout clears the cookie; a separately copied token remains valid until expiry or credential/secret rotation. Login is throttled to 10 attempts per minute per app process (resets on restart). The app and every data route independently check authentication.
+Sessions expire seven days after sign-in. Use Sign out in the top bar to clear the browser session. JWT logout clears the cookie; a separately copied token remains valid until expiry or credential/secret rotation. Login is throttled to 10 attempts per minute per app process (resets on restart). The app and every data route independently check authentication.
 
 Run `node tests/auth.mjs` with AUTH_USERNAME, AUTH_PASSWORD, and JWT_SECRET set to test access controls and expiry. Existing API integration tests also require AUTH_USERNAME and AUTH_PASSWORD.
 

@@ -2,7 +2,8 @@ import { statusChange } from "@/lib/task-status";
 import { authGuard } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { commandSchema } from "@/lib/validation";
-import { targetDateChange } from "@/lib/target-date";
+import { isPastTargetDateChange, targetDateChange } from "@/lib/target-date";
+import { localDay } from "@/lib/types";
 export const runtime = "nodejs";
 export async function GET(req: Request) {
   const denied = await authGuard(req);
@@ -345,6 +346,11 @@ export async function POST(req: Request) {
           [id, d.member_id, d.team_id],
         );
         message = `Assignment changed from ${[oldM, oldT].filter(Boolean).join(" · ") || "Unassigned"} to ${[m?.name, team?.name].filter(Boolean).join(" · ") || "Unassigned"}`;
+      }
+      if (d.action === "update" && d.target_date !== undefined &&
+        isPastTargetDateChange(t.target_date, d.target_date, localDay())) {
+        await c.query("ROLLBACK");
+        return Response.json({ error: "Target date cannot be earlier than today." }, { status: 400 });
       }
       if (d.action === "update") message = d.message;
       if (d.action === "status" || d.action === "update") {

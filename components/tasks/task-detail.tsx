@@ -4,7 +4,7 @@ import { useWorkspace } from "@/lib/store";
 import { assignedDays, statuses, type Event, type Task } from "@/lib/types";
 import { isOverdue } from "@/lib/target-date";
 import { Folder, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TaskTimeline } from "./task-timeline";
 import { TaskUpdateForm } from "./task-update-form";
 const stamp = (s: string) =>
@@ -22,6 +22,18 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
   const [dependencyDraft, setDependencyDraft] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const dockRef = useRef<HTMLDivElement>(null);
+  const [dockHeight, setDockHeight] = useState(200);
+  useEffect(() => {
+    const dock = dockRef.current;
+    if (!dock) return;
+    const measure = () => setDockHeight(Math.ceil(dock.getBoundingClientRect().height));
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(dock);
+    return () => observer.disconnect();
+  }, []);
   async function refresh() {
     const r = await fetch(`/api/tasks/${t.id}`);
     if (!r.ok) throw Error("Could not load the timeline.");
@@ -49,6 +61,7 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
     }
   }
   return (
+    <>
     <div className="task-detail-layout">
       <section className="task-detail-panel" aria-label="Task details">
         <div className="detail-project">
@@ -255,20 +268,24 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
           </Button>
         </form>
       </section>
-      <aside className="task-activity-panel" aria-label="Timeline and updates">
+      <aside className="task-activity-panel" aria-label="Task activity">
         <TaskTimeline events={events} loading={loading} />
-        <TaskUpdateForm
-          taskId={t.id}
-          targetDate={t.target_date}
-          status={t.status}
-          dependencyReason={t.dependency_reason}
-          busy={busy}
-          setBusy={setBusy}
-          setError={setError}
-          refresh={refresh}
-          refreshWorkspace={s.refresh}
-        />
       </aside>
     </div>
+    <div className="task-update-spacer" style={{ height: dockHeight + 24 }} aria-hidden="true" />
+    <div className="task-update-dock" ref={dockRef}>
+      <TaskUpdateForm
+        taskId={t.id}
+        targetDate={t.target_date}
+        status={t.status}
+        dependencyReason={t.dependency_reason}
+        busy={busy}
+        setBusy={setBusy}
+        setError={setError}
+        refresh={refresh}
+        refreshWorkspace={s.refresh}
+      />
+    </div>
+    </>
   );
 }
