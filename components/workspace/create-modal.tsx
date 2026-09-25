@@ -18,12 +18,14 @@ export function CreateModal({
   projectId,
   moduleId,
   day,
+  addToMyDay = false,
 }: {
   kind: string | null;
   close: () => void;
   projectId?: string;
   moduleId?: string;
   day: string;
+  addToMyDay?: boolean;
 }) {
   const s = useWorkspace((s) => s);
   const [error, setError] = useState("");
@@ -45,7 +47,7 @@ export function CreateModal({
         action: kind,
         ...f,
         ...(kind === "module" ? { project_id: projectId } : {}),
-        ...(kind === "task" ? { module_id: chosenModule || null, target_date: f.target_date || null } : {}),
+        ...(kind === "task" ? { ...(addToMyDay ? { day } : {}), module_id: chosenModule || null, member_id: f.member_id || null, target_date: f.target_date || null } : {}),
         ...(kind === "member" ? { team_id: f.team_id || null } : {}),
       });
       close();
@@ -118,52 +120,65 @@ export function CreateModal({
             )}
             {kind === "task" && (
               <>
-                <label>
-                  Project
-                  <select
-                    name="project_id"
-                    value={chosenProject}
-                    onChange={(e) => {
-                      setChosenProject(e.target.value);
-                      setChosenModule("");
-                    }}
-                    required
-                  >
-                    {s.data.projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Module
-                  <select
-                    name="module_id"
-                    value={chosenModule}
-                    onChange={(e) => setChosenModule(e.target.value)}
-                  >
-                    <option value="">No module</option>
-                    {s.data.modules
-                      .filter((m) => m.project_id === chosenProject)
-                      .map((m) => (
+                <div className="grid grid-cols-2 gap-4 [&>label]:min-w-0 [&_select]:w-full [&_select]:min-w-0">
+                  <label>
+                    Project
+                    <select
+                      name="project_id"
+                      value={chosenProject}
+                      onChange={(e) => {
+                        setChosenProject(e.target.value);
+                        setChosenModule("");
+                      }}
+                      required
+                    >
+                      {s.data.projects.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Module
+                    <select
+                      name="module_id"
+                      value={chosenModule}
+                      onChange={(e) => setChosenModule(e.target.value)}
+                    >
+                      <option value="">No module</option>
+                      {s.data.modules
+                        .filter((m) => m.project_id === chosenProject)
+                        .map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <label>
+                    Priority
+                    <select name="priority" defaultValue="Medium">
+                      {["Low", "Medium", "High"].map((p) => (
+                        <option key={p}>{p}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Assignee (optional)
+                    <select name="member_id" defaultValue="">
+                      <option value="">Unassigned</option>
+                      {s.data.members.map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name}
                         </option>
                       ))}
-                  </select>
-                </label>
+                    </select>
+                  </label>
+                </div>
                 <label>
-                  Target date (optional)
+                  Due date (optional)
                   <input type="date" name="target_date" max="9999-12-31" />
-                </label>
-                <label>
-                  Priority
-                  <select name="priority" defaultValue="Medium">
-                    {["Low", "Medium", "High"].map((p) => (
-                      <option key={p}>{p}</option>
-                    ))}
-                  </select>
                 </label>
               </>
             )}

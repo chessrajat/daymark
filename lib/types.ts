@@ -2,6 +2,7 @@ export const statuses = [
   "To do",
   "In progress",
   "Blocked",
+  "Dependent",
   "Completed",
   "Dropped",
 ] as const;
@@ -28,6 +29,7 @@ export type Task = {
   status: (typeof statuses)[number];
   priority: string;
   target_date: string | null;
+  dependency_reason: string | null;
   member_id: string | null;
   team_id: string | null;
   assigned_at: string | null;

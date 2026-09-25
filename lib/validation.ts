@@ -27,6 +27,8 @@ export const commandSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("member"), name, team_id: uuid.nullable() }),
   z.object({
     action: z.literal("task"),
+    member_id: uuid.nullable().default(null),
+    day: z.iso.date().optional(),
     project_id: uuid,
     module_id: uuid.nullable().default(null),
     title: name,
@@ -42,7 +44,7 @@ export const commandSchema = z.discriminatedUnion("action", [
     priority: z.enum(["Low", "Medium", "High"]),
     target_date: targetDateSchema.optional(),
   }),
-  z.object({ action: z.literal("status"), id: uuid, status: z.enum(statuses) }),
+  z.object({ action: z.literal("status"), id: uuid, status: z.enum(statuses), dependency_reason: z.string().trim().max(2000).optional() }),
   z.object({
     action: z.literal("assign"),
     id: uuid,
@@ -51,6 +53,8 @@ export const commandSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     action: z.literal("update"),
+    status: z.enum(statuses).optional(),
+    dependency_reason: z.string().trim().max(2000).optional(),
     id: uuid,
     message: z.string().trim().min(1).max(10000),
     target_date: targetDateSchema.optional(),

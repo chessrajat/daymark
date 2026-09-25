@@ -576,6 +576,7 @@ h1 {
   color: #769555;
   border-color: #e1ecd5;
 }
+.status-dependent,
 .status-blocked {
   background: #fff0ec;
   color: #b97c6a;

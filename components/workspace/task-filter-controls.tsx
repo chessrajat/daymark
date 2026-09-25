@@ -14,6 +14,17 @@ export function TaskFilterControls({
   return (
     <div className="task-filters">
       <label>
+        Assignment
+        <select
+          aria-label="Filter by assignment"
+          value={params.get("assignment") || ""}
+          onChange={(e) => setFilter("assignment", e.target.value)}
+        >
+          <option value="">All tasks</option>
+          <option value="unassigned">Unassigned</option>
+        </select>
+      </label>
+      <label>
         Project
         <select
           aria-label="Filter by project"

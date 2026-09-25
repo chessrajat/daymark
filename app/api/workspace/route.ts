@@ -1,3 +1,4 @@
+import { statusChange } from "@/lib/task-status";
 import { authGuard } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { commandSchema } from "@/lib/validation";
@@ -212,6 +213,16 @@ export async function POST(req: Request) {
       await c.query("DELETE FROM modules WHERE project_id=$1", [id]);
       await c.query("DELETE FROM projects WHERE id=$1", [id]);
     } else if (d.action === "task") {
+      const assignee = d.member_id
+        ? (await c.query("SELECT name FROM members WHERE id=$1", [d.member_id])).rows[0]
+        : null;
+      if (d.member_id && !assignee) {
+        await c.query("ROLLBACK");
+        return Response.json(
+          { error: "Assignee not found. Refresh and try again." },
+          { status: 400 },
+        );
+      }
       if (
         d.module_id &&
         !(
@@ -229,8 +240,8 @@ export async function POST(req: Request) {
       }
       id = (
         await c.query(
-          "INSERT INTO tasks(project_id,title,description,priority,module_id,target_date) VALUES($1,$2,$3,$4,$5,$6) RETURNING id",
-          [d.project_id, d.title, d.description, d.priority, d.module_id, d.target_date],
+          "INSERT INTO tasks(project_id,title,description,priority,module_id,target_date,member_id,assigned_at) VALUES($1,$2,$3,$4,$5,$6,$7,CASE WHEN $7::uuid IS NULL THEN NULL ELSE now() END) RETURNING id",
+          [d.project_id, d.title, d.description, d.priority, d.module_id, d.target_date, d.member_id],
         )
       ).rows[0].id;
       const moduleName = d.module_id
@@ -240,6 +251,11 @@ export async function POST(req: Request) {
       message = moduleName
         ? "Task created in module: " + moduleName
         : "Task created";
+      if (d.day) {
+        await c.query("INSERT INTO my_days(task_id,day) VALUES($1,$2)", [id, d.day]);
+        message += `\nAdded to My Day · ${d.day}`;
+      }
+      if (assignee) message += `\nAssigned to: ${assignee.name}`;
       if (d.target_date) message += `\nTarget date: ${d.target_date}`;
     } else {
       id = d.id;
@@ -282,10 +298,6 @@ export async function POST(req: Request) {
           (previous || "No module") +
           " to " +
           (module?.name || "No module");
-      }
-      if (d.action === "status" && t.status !== d.status) {
-        await c.query("UPDATE tasks SET status=$2 WHERE id=$1", [id, d.status]);
-        message = `Status changed from ${t.status} to ${d.status}`;
       }
       if (d.action === "edit") {
         await c.query(
@@ -335,6 +347,18 @@ export async function POST(req: Request) {
         message = `Assignment changed from ${[oldM, oldT].filter(Boolean).join(" · ") || "Unassigned"} to ${[m?.name, team?.name].filter(Boolean).join(" · ") || "Unassigned"}`;
       }
       if (d.action === "update") message = d.message;
+      if (d.action === "status" || d.action === "update") {
+        let change;
+        try { change = statusChange(t, d); }
+        catch (error) {
+          await c.query("ROLLBACK");
+          return Response.json({ error: (error as Error).message }, { status: 400 });
+        }
+        if (change.message) {
+          await c.query("UPDATE tasks SET status=$2,dependency_reason=$3 WHERE id=$1", [id, change.status, change.reason]);
+          message = [message, change.message].filter(Boolean).join("\n");
+        }
+      }
       if ((d.action === "edit" || d.action === "update") && d.target_date !== undefined) {
         const change = targetDateChange(t.target_date, d.target_date);
         if (change) {

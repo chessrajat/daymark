@@ -19,6 +19,7 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
   const [busy, setBusy] = useState(false);
   const [team, setTeam] = useState(t.team_id || "");
   const [member, setMember] = useState(t.member_id || "");
+  const [dependencyDraft, setDependencyDraft] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   async function refresh() {
@@ -95,7 +96,9 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
             value={t.status}
             disabled={busy}
             onChange={(e) =>
-              run({ action: "status", id: t.id, status: e.target.value })
+              e.target.value === "Dependent"
+                ? setDependencyDraft(t.dependency_reason || "")
+                : run({ action: "status", id: t.id, status: e.target.value })
             }
           >
             {statuses.map((st) => (
@@ -119,6 +122,26 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
             {t.my_days.includes(day) ? "Remove from My Day" : "Add to My Day"}
           </Button>
         </div>
+        {t.status === "Dependent" && (
+          <p className="mt-3 whitespace-pre-wrap text-sm">Dependency: {t.dependency_reason}</p>
+        )}
+        {dependencyDraft !== null && (
+          <form className="form-stack mt-3" onSubmit={async (e) => {
+            e.preventDefault();
+            if (await run({ action: "status", id: t.id, status: "Dependent", dependency_reason: dependencyDraft })) setDependencyDraft(null);
+          }}>
+            <label>
+              Dependency reason
+              <textarea required maxLength={2000} disabled={busy} value={dependencyDraft}
+                placeholder="Who or which task are you waiting on, and why?"
+                onChange={(e) => setDependencyDraft(e.target.value)} />
+            </label>
+            <div className="flex gap-2">
+              <Button size="sm" disabled={busy || !dependencyDraft.trim()}>Mark as dependent</Button>
+              <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => setDependencyDraft(null)}>Cancel</Button>
+            </div>
+          </form>
+        )}
         <p className={isOverdue(t.target_date, t.status, day) ? "target-date overdue" : "target-date"}>
           Target date: {t.target_date || "Not set"}
           {isOverdue(t.target_date, t.status, day) && " - Overdue"}
@@ -237,6 +260,8 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
         <TaskUpdateForm
           taskId={t.id}
           targetDate={t.target_date}
+          status={t.status}
+          dependencyReason={t.dependency_reason}
           busy={busy}
           setBusy={setBusy}
           setError={setError}

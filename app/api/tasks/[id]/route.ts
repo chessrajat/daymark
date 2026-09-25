@@ -1,3 +1,4 @@
+import { statusChange, statusUpdateSchema } from "@/lib/task-status";
 import { authGuard } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -48,6 +49,12 @@ export async function POST(
   );
   if (!targetDate.success)
     return Response.json({ error: "Enter a valid target date." }, { status: 400 });
+  const statusUpdate = statusUpdateSchema.safeParse({
+    status: form.has("status") ? form.get("status") : undefined,
+    dependency_reason: form.has("dependency_reason") ? form.get("dependency_reason") : undefined,
+  });
+  if (!statusUpdate.success)
+    return Response.json({ error: "Enter a valid status and dependency reason (up to 2,000 characters)." }, { status: 400 });
   const files = form.getAll("files");
   if (
     typeof message !== "string" ||
@@ -77,14 +84,23 @@ export async function POST(
   const c = await (await db()).connect();
   try {
     await c.query("BEGIN");
-    const task = await c.query("SELECT id, to_char(target_date, 'YYYY-MM-DD') AS target_date FROM tasks WHERE id=$1 FOR UPDATE", [
+    const task = await c.query("SELECT id, status, dependency_reason, to_char(target_date, 'YYYY-MM-DD') AS target_date FROM tasks WHERE id=$1 FOR UPDATE", [
       id,
     ]);
     if (!task.rowCount) {
       await c.query("ROLLBACK");
       return Response.json({ error: "Task not found." }, { status: 404 });
     }
-    let updateMessage = message.trim();
+    let change;
+    try { change = statusChange(task.rows[0], statusUpdate.data); }
+    catch (error) {
+      await c.query("ROLLBACK");
+      return Response.json({ error: (error as Error).message }, { status: 400 });
+    }
+    if (change.message) {
+      await c.query("UPDATE tasks SET status=$2,dependency_reason=$3 WHERE id=$1", [id, change.status, change.reason]);
+    }
+    let updateMessage = [message.trim(), change.message].filter(Boolean).join("\n");
     if (targetDate.data !== undefined) {
       const change = targetDateChange(task.rows[0].target_date, targetDate.data);
       if (change) {

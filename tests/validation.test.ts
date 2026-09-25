@@ -56,3 +56,17 @@ test("target dates support setting, clearing and omission without accepting inva
   const created = commandSchema.parse({ action: "task", project_id: id, title: "Task" });
   assert.equal("target_date" in created && created.target_date, null);
 });
+
+test("task creation accepts an optional assignee and due date", () => {
+  const task = { action: "task", project_id: id, title: "New task" };
+  for (const member_id of [undefined, null, id]) {
+    const result = commandSchema.parse({ ...task, member_id, target_date: "2026-10-01" });
+    assert.equal(result.action, "task");
+    if (result.action === "task") {
+      assert.equal(result.member_id, member_id ?? null);
+      assert.equal(result.target_date, "2026-10-01");
+    }
+  }
+  assert.equal(commandSchema.safeParse({ ...task, member_id: "invalid" }).success, false);
+  assert.equal(commandSchema.safeParse({ ...task, target_date: "2026-02-30" }).success, false);
+});

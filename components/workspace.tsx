@@ -331,6 +331,7 @@ export function Workspace() {
         </div>
       </main>
       <CreateModal
+        addToMyDay={section === "my-day"}
         kind={modal}
         close={() => setModal(null)}
         projectId={projectId}

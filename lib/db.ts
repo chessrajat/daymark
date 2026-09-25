@@ -8,6 +8,9 @@ const schema = `
         CREATE TABLE IF NOT EXISTS modules (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE, name text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(id,project_id));
         ALTER TABLE tasks ADD COLUMN IF NOT EXISTS module_id uuid;
         ALTER TABLE tasks ADD COLUMN IF NOT EXISTS target_date date;
+        ALTER TABLE tasks ADD COLUMN IF NOT EXISTS dependency_reason text;
+        ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_status_check;
+        ALTER TABLE tasks ADD CONSTRAINT tasks_status_check CHECK (status IN ('To do','In progress','Blocked','Dependent','Completed','Dropped'));
         DO $$ BEGIN
           IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tasks_module_project_fk' AND conrelid='tasks'::regclass) THEN
             ALTER TABLE tasks ADD CONSTRAINT tasks_module_project_fk FOREIGN KEY(module_id,project_id) REFERENCES modules(id,project_id);

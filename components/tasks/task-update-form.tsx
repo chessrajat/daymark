@@ -1,10 +1,13 @@
 "use client";
+import { statuses, type Task } from "@/lib/types";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Paperclip, X } from "lucide-react";
 export function TaskUpdateForm({
   taskId,
   targetDate,
+  status,
+  dependencyReason,
   busy,
   setBusy,
   setError,
@@ -13,12 +16,17 @@ export function TaskUpdateForm({
 }: {
   taskId: string;
   targetDate: string | null;
+  status: Task["status"];
+  dependencyReason: string | null;
   busy: boolean;
   setBusy: (v: boolean) => void;
   setError: (v: string) => void;
   refresh: () => Promise<void>;
   refreshWorkspace: () => Promise<void>;
 }) {
+  const [statusDraft, setStatusDraft] = useState<Task["status"] | undefined>();
+  const [reasonDraft, setReasonDraft] = useState<string | undefined>();
+  const selectedStatus = statusDraft ?? status;
   const [files, setFiles] = useState<File[]>([]);
   const [message, setMessage] = useState("");
   const [dateDraft, setDateDraft] = useState<string | undefined>(undefined);
@@ -33,6 +41,8 @@ export function TaskUpdateForm({
         try {
           const form = new FormData();
           form.set("message", message);
+          if (statusDraft !== undefined) form.set("status", statusDraft);
+          if (selectedStatus === "Dependent") form.set("dependency_reason", reasonDraft ?? dependencyReason ?? "");
           if (dateDraft !== undefined) form.set("target_date", dateDraft);
           files.forEach((f) => form.append("files", f));
           const r = await fetch("/api/tasks/" + taskId, {
@@ -44,6 +54,8 @@ export function TaskUpdateForm({
           setMessage("");
           setFiles([]);
           setDateDraft(undefined);
+          setStatusDraft(undefined);
+          setReasonDraft(undefined);
           await refresh();
           await refreshWorkspace();
         } catch (err) {
@@ -53,6 +65,30 @@ export function TaskUpdateForm({
         }
       }}
     >
+      <label className="update-target-date">
+        Status
+        <select
+          aria-label="Status with update"
+          value={selectedStatus}
+          disabled={busy}
+          onChange={(e) => setStatusDraft(e.target.value as Task["status"])}
+        >
+          {statuses.map((value) => <option key={value}>{value}</option>)}
+        </select>
+      </label>
+      {selectedStatus === "Dependent" && (
+        <label className="update-target-date">
+          Dependency reason
+          <textarea
+            required
+            maxLength={2000}
+            placeholder="Who or which task are you waiting on, and why?"
+            value={reasonDraft ?? dependencyReason ?? ""}
+            disabled={busy}
+            onChange={(e) => setReasonDraft(e.target.value)}
+          />
+        </label>
+      )}
       <textarea
         aria-label="Task update"
         placeholder="Write an update and attach supporting files…"
