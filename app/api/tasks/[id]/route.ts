@@ -14,12 +14,23 @@ export async function GET(
   const { id } = await params;
   if (!z.uuid().safeParse(id).success)
     return Response.json({ error: "Invalid task" }, { status: 400 });
+  const query = new URL(req.url).searchParams;
+  const paginated = query.get("page") === "1";
+  const before = query.get("before");
+  if (before && !z.uuid().safeParse(before).success)
+    return Response.json({ error: "Invalid activity cursor." }, { status: 400 });
   const p = await db();
   const events = await p.query(
-    "SELECT e.*, a.name AS attachment_name, COALESCE((SELECT json_agg(json_build_object('id', f.id, 'name', f.name, 'size', octet_length(f.content)) ORDER BY f.created_at,f.id) FROM event_attachments ea JOIN attachments f ON f.id=ea.attachment_id WHERE ea.event_id=e.id), '[]'::json) AS attachments FROM events e LEFT JOIN attachments a ON a.id=e.attachment_id WHERE e.task_id=$1 ORDER BY e.created_at, e.id",
-    [id],
+    `SELECT e.*, a.name AS attachment_name, COALESCE((SELECT json_agg(json_build_object('id', f.id, 'name', f.name, 'size', octet_length(f.content)) ORDER BY f.created_at,f.id) FROM event_attachments ea JOIN attachments f ON f.id=ea.attachment_id WHERE ea.event_id=e.id), '[]'::json) AS attachments
+     FROM events e LEFT JOIN attachments a ON a.id=e.attachment_id WHERE e.task_id=$1
+     ${paginated && before ? "AND (e.created_at,e.id) < (SELECT created_at,id FROM events WHERE id=$2 AND task_id=$1)" : ""}
+     ORDER BY e.created_at ${paginated ? "DESC" : "ASC"}, e.id ${paginated ? "DESC" : "ASC"}
+     ${paginated ? "LIMIT 26" : ""}`,
+    paginated && before ? [id, before] : [id],
   );
-  return Response.json(events.rows);
+  if (!paginated) return Response.json(events.rows);
+  const page = events.rows.slice(0, 25).reverse();
+  return Response.json({ events: page, nextCursor: events.rows.length > 25 ? page[0].id : null });
 }
 export async function POST(
   req: Request,

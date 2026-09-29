@@ -8,12 +8,32 @@ import {
 } from "@/components/ui/dialog";
 import { useWorkspace } from "@/lib/store";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 
 export function DeleteProject({ id }: { id: string }) {
   const s = useWorkspace((s) => s);
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const optionsRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    function dismiss(event: globalThis.PointerEvent) {
+      if (!optionsRef.current?.contains(event.target as Node))
+        optionsRef.current?.removeAttribute("open");
+    }
+    function escape(event: KeyboardEvent) {
+      if (event.key === "Escape" && optionsRef.current?.open) {
+        optionsRef.current.removeAttribute("open");
+        optionsRef.current.querySelector("summary")?.focus();
+      }
+    }
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, []);
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -21,22 +41,33 @@ export function DeleteProject({ id }: { id: string }) {
   if (!project) return null;
   return (
     <>
+      <details ref={optionsRef} className="project-options">
+        <summary aria-label="Project options" title="Project options">
+          <MoreHorizontal size={18} aria-hidden="true" />
+        </summary>
+        <div className="project-options-panel">
       <Button
         variant="ghost"
         size="sm"
-        className="text-red-700"
+        className="project-delete-option"
         onClick={() => {
           setError("");
           setConfirmation("");
+          optionsRef.current?.removeAttribute("open");
           setOpen(true);
         }}
       >
-        Delete project
+        <Trash2 size={14} aria-hidden="true" /> Delete project
       </Button>
+        </div>
+      </details>
       <Dialog
         open={open}
         onOpenChange={(value) => {
-          if (!busy) setOpen(value);
+          if (!busy) {
+            setOpen(value);
+            if (!value) requestAnimationFrame(() => optionsRef.current?.querySelector("summary")?.focus());
+          }
         }}
       >
         <DialogContent>
@@ -88,7 +119,7 @@ export function DeleteProject({ id }: { id: string }) {
                 type="button"
                 variant="outline"
                 disabled={busy}
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); requestAnimationFrame(() => optionsRef.current?.querySelector("summary")?.focus()); }}
               >
                 Cancel
               </Button>

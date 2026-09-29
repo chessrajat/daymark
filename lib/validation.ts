@@ -4,12 +4,19 @@ const name = z.string().trim().min(1).max(200);
 const uuid = z.uuid();
 export const targetDateSchema = z.iso.date().nullable();
 export const commandSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("place_project"), id: uuid, target_id: uuid, placement: z.enum(["before", "after"]) }),
+  z.object({ action: z.literal("place_module"), id: uuid, target_id: uuid, placement: z.enum(["before", "after"]) }),
+  z.object({ action: z.literal("move_project"), id: uuid, direction: z.enum(["up", "down"]) }),
+  z.object({ action: z.literal("reorder_module"), id: uuid, direction: z.enum(["up", "down"]) }),
   z.object({
     action: z.literal("project"),
     name,
     description: z.string().max(10000).default(""),
   }),
   z.object({ action: z.literal("module"), project_id: uuid, name }),
+  z.object({ action: z.literal("rename_module"), id: uuid, name }),
+  z.object({ action: z.literal("delete_module"), id: uuid }),
+  z.object({ action: z.literal("delete_task"), id: uuid }),
   z.object({
     action: z.literal("move_module"),
     id: uuid,

@@ -1,7 +1,9 @@
 "use client";
+import { ReorderableList, ReorderableRow } from "./reorderable-row";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import { ModuleOptions } from "./module-options";
 import { DeleteProject } from "./delete-project";
 
 import type { State } from "@/lib/store";
@@ -16,10 +18,12 @@ export function ModuleSidebar({
   moduleId?: string;
   setModal: (value: string | null) => void;
 }) {
+  const modules = s.data.modules.filter((m) => m.project_id === project.id);
   return (
     <aside className="module-sidebar" aria-label="Project modules">
       <div className="section-heading">
         <h2>Modules</h2>
+        <div className="module-heading-actions">
         <Button
           variant="ghost"
           size="icon"
@@ -28,6 +32,8 @@ export function ModuleSidebar({
         >
           <Plus size={16} />
         </Button>
+        <DeleteProject id={project.id} />
+        </div>
       </div>
       <Link
         className={"module-link " + (!moduleId ? "selected" : "")}
@@ -51,13 +57,13 @@ export function ModuleSidebar({
           }
         </span>
       </Link>
-      {s.data.modules
-        .filter((m) => m.project_id === project.id)
-        .map((m) => {
+      <ReorderableList kind="module">
+      {modules.map((m, i) => {
           const items = s.data.tasks.filter((t) => t.module_id === m.id);
           return (
+            <ReorderableRow key={m.id} id={m.id} name={m.name} kind="module"
+              first={i === 0} last={i === modules.length - 1}>
             <Link
-              key={m.id}
               className={"module-link " + (moduleId === m.id ? "selected" : "")}
               href={"/projects/" + project.id + "/modules/" + m.id}
             >
@@ -68,22 +74,12 @@ export function ModuleSidebar({
                   {items.length} completed
                 </small>
               </span>
-              <span>{items.length}</span>
             </Link>
+            <ModuleOptions module={m} taskCount={items.length} active={moduleId === m.id} />
+            </ReorderableRow>
           );
         })}
-      <Button
-        variant="outline"
-        size="sm"
-        className="mt-4 w-full"
-        onClick={() => setModal("module")}
-      >
-        <Plus size={14} />
-        New module
-      </Button>
-      <div className="mt-8 border-t border-stone-200 pt-4">
-        <DeleteProject id={project.id} />
-      </div>
+      </ReorderableList>
     </aside>
   );
 }

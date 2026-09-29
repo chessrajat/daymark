@@ -125,3 +125,11 @@ After package.json or package-lock.json changes, restart the app with docker com
 ## Notes
 
 Open Notes in the sidebar to create, edit, search, and delete notes. Tag a note as Question and use Questions only to filter the list. Notes support multiple attachments, the shared preview strip, and removing existing attachments while editing. Save commits note details and attachment changes together. Deleting a note also removes its attachments. New uploads are limited to 10 files, 10 MB each and 25 MB per save. Tables initialize automatically; existing task data is unchanged. Non-browser regression coverage is in tests/notes.mjs.
+
+## Task reports
+
+Open Reports in the sidebar to build a task register, status summary, assignee workload, or overdue-task report. Filters combine project, module, member, team, assignment, status, priority, search, target-date state, date range, and My Day. Date ranges can use target, created, or last-updated dates; created and updated dates follow your browser time zone. Completed tasks are hidden by default; select All statuses or Completed to include them. Overdue reports exclude completed and dropped tasks.
+
+The preview shows the first 100 matching tasks with totals calculated from the full result. Download PDF exports all matching tasks with the selected filters, summary counts, repeated table headers, page numbers, and full dependency reasons. Summary reports can omit task details. Exports are limited to 5,000 tasks; narrow the filters for larger result sets. PDFs are generated on the server without a browser or external font service.
+
+Run `node tests/reports.mjs` against a running app with AUTH_USERNAME, AUTH_PASSWORD, and DATABASE_URL set. It creates temporary fixtures, verifies filters, summaries, PDF generation, authentication, and the export limit, then removes its fixtures. Optional REPORT_OUTPUT_DIR saves PDFs for visual inspection.

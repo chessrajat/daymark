@@ -1,9 +1,11 @@
 "use client";
+import { ReorderableList, ReorderableRow } from "./reorderable-row";
 import { APP_VERSION } from "@/version";
 import { useWorkspace } from "@/lib/store";
 import { type Task } from "@/lib/types";
 import {
   FileText,
+  FileBarChart,
   LayoutGrid,
   Leaf,
   ListTodo,
@@ -45,6 +47,7 @@ export function WorkspaceSidebar({
             ["tasks", "/tasks", "All tasks", ListTodo],
             ["teams", "/teams", "People & teams", Users],
             ["notes", "/notes", "Notes", FileText],
+            ["reports", "/reports", "Reports", FileBarChart],
           ].map(([key, href, label, Icon]) => {
             const I = Icon as typeof Sun;
             return (
@@ -74,16 +77,20 @@ export function WorkspaceSidebar({
           </button>
         </div>
         <nav>
+          <ReorderableList kind="project">
           {s.data.projects.map((p, i) => (
+            <ReorderableRow key={p.id} id={p.id} name={p.name} kind="project"
+              first={i === 0} last={i === s.data.projects.length - 1}>
             <Link
-              key={p.id}
               href={`/projects/${p.id}`}
               className={`nav-link ${projectId === p.id ? "active" : ""}`}
             >
               <span className={`project-dot dot-${i % 4}`} />
               <span className="truncate">{p.name}</span>
             </Link>
+            </ReorderableRow>
           ))}
+          </ReorderableList>
           {!s.data.projects.length && (
             <p className="sidebar-hint">
               A fresh start. Create your first project.

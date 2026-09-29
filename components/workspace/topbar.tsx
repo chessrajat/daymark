@@ -25,6 +25,7 @@ export function WorkspaceTopbar({
                 overview: "Overview",
                 "my-day": "My Day",
                 tasks: "All tasks",
+                reports: "Reports",
                 teams: "People & teams",
               }[section] ||
               "Projects"}

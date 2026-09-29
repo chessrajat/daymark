@@ -3,6 +3,7 @@ export const statuses = [
   "In progress",
   "Blocked",
   "Dependent",
+  "Under verification",
   "Completed",
   "Dropped",
 ] as const;

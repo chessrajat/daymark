@@ -15,6 +15,11 @@ const stamp = (s: string) =>
 export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
   const s = useWorkspace((s) => s);
   const [events, setEvents] = useState<Event[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [olderError, setOlderError] = useState("");
+  const historyBusy = useRef(false);
+  const historyVersion = useRef(0);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [team, setTeam] = useState(t.team_id || "");
@@ -35,10 +40,35 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
     return () => observer.disconnect();
   }, []);
   async function refresh() {
-    const r = await fetch(`/api/tasks/${t.id}`);
+    const version = ++historyVersion.current;
+    const r = await fetch(`/api/tasks/${t.id}?page=1`);
     if (!r.ok) throw Error("Could not load the timeline.");
-    setEvents(await r.json());
+    const page = await r.json();
+    if (version !== historyVersion.current) return;
+    setEvents(page.events);
+    setNextCursor(page.nextCursor);
+    setOlderError("");
     setLoading(false);
+  }
+  async function loadOlder() {
+    if (!nextCursor || historyBusy.current) return;
+    historyBusy.current = true;
+    setLoadingOlder(true);
+    setOlderError("");
+    const version = historyVersion.current;
+    try {
+      const r = await fetch(`/api/tasks/${t.id}?page=1&before=${nextCursor}`);
+      if (!r.ok) throw Error("Could not load older activity. Try again.");
+      const page = await r.json();
+      if (version !== historyVersion.current) return;
+      setEvents((current) => [...page.events, ...current]);
+      setNextCursor(page.nextCursor);
+    } catch (error) {
+      if (version === historyVersion.current) setOlderError((error as Error).message);
+    } finally {
+      historyBusy.current = false;
+      setLoadingOlder(false);
+    }
   }
   useEffect(() => {
     refresh().catch((e) => {
@@ -269,7 +299,8 @@ export function TaskDetail({ task: t, day }: { task: Task; day: string }) {
         </form>
       </section>
       <aside className="task-activity-panel" aria-label="Task activity">
-        <TaskTimeline events={events} loading={loading} />
+        <TaskTimeline events={events} loading={loading} hasOlder={!!nextCursor}
+          loadingOlder={loadingOlder} olderError={olderError} loadOlder={loadOlder} />
       </aside>
     </div>
     <div className="task-update-spacer" style={{ height: dockHeight + 24 }} aria-hidden="true" />

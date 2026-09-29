@@ -11,13 +11,13 @@ export async function GET(req: Request) {
   try {
     const p = await db();
     const [projects, teams, members, tasks, modules] = await Promise.all([
-      p.query("SELECT * FROM projects ORDER BY created_at"),
+      p.query("SELECT * FROM projects ORDER BY position, created_at, id"),
       p.query("SELECT * FROM teams ORDER BY name"),
       p.query("SELECT * FROM members ORDER BY name"),
       p.query(
         "SELECT t.*, to_char(t.target_date, 'YYYY-MM-DD') AS target_date, COALESCE((SELECT json_agg(to_char(day, 'YYYY-MM-DD')) FROM my_days WHERE task_id=t.id),'[]'::json) AS my_days FROM tasks t ORDER BY created_at DESC",
       ),
-      p.query("SELECT * FROM modules ORDER BY created_at, id"),
+      p.query("SELECT * FROM modules ORDER BY position, created_at, id"),
     ]);
     return Response.json({
       projects: projects.rows,
@@ -61,10 +61,50 @@ export async function POST(req: Request) {
     let id: string | undefined;
     let message = "";
     let kind: string = d.action;
-    if (d.action === "project")
+    if (d.action === "move_project" || d.action === "reorder_module" || d.action === "place_project" || d.action === "place_module") {
+      id = d.id;
+      const isModule = d.action === "reorder_module" || d.action === "place_module";
+      const table = isModule ? "modules" : "projects";
+      const item = (await c.query(`SELECT * FROM ${table} WHERE id=$1 FOR UPDATE`, [id])).rows[0];
+      if (!item) {
+        await c.query("ROLLBACK");
+        return Response.json({ error: "Item not found. Refresh and try again." }, { status: 404 });
+      }
+      const list = (await c.query(
+        `SELECT id FROM ${table} ${isModule ? "WHERE project_id=$1" : ""} ORDER BY position,created_at,id FOR UPDATE`,
+        isModule ? [item.project_id] : [],
+      )).rows.map((row: { id: string }) => row.id);
+      const index = list.indexOf(id!);
+      let changed = false;
+      if (d.action === "place_project" || d.action === "place_module") {
+        if (!list.includes(d.target_id)) {
+          await c.query("ROLLBACK");
+          return Response.json({ error: "Choose an item from the same list." }, { status: 400 });
+        }
+        if (d.target_id !== d.id) {
+          list.splice(index, 1);
+          const target = list.indexOf(d.target_id) + (d.placement === "after" ? 1 : 0);
+          list.splice(target, 0, d.id);
+          changed = true;
+        }
+      } else {
+        const next = index + (d.direction === "up" ? -1 : 1);
+        if (next >= 0 && next < list.length) {
+          [list[index], list[next]] = [list[next], list[index]];
+          changed = true;
+        }
+      }
+      if (changed) {
+        await c.query(
+          `UPDATE ${table} AS item SET position=ordered.position::integer
+           FROM unnest($1::uuid[]) WITH ORDINALITY AS ordered(id,position) WHERE item.id=ordered.id`,
+          [list],
+        );
+      }
+    } else if (d.action === "project")
       id = (
         await c.query(
-          "INSERT INTO projects(name,description) VALUES($1,$2) RETURNING id",
+          "INSERT INTO projects(name,description,position) VALUES($1,$2,(SELECT COALESCE(MAX(position),0)+1 FROM projects)) RETURNING id",
           [d.name, d.description],
         )
       ).rows[0].id;
@@ -190,10 +230,30 @@ export async function POST(req: Request) {
     } else if (d.action === "module") {
       id = (
         await c.query(
-          "INSERT INTO modules(project_id,name) VALUES($1,$2) RETURNING id",
+          "INSERT INTO modules(project_id,name,position) VALUES($1,$2,(SELECT COALESCE(MAX(position),0)+1 FROM modules WHERE project_id=$1)) RETURNING id",
           [d.project_id, d.name],
         )
       ).rows[0].id;
+    } else if (d.action === "rename_module" || d.action === "delete_module") {
+      id = d.id;
+      const module = (await c.query("SELECT * FROM modules WHERE id=$1 FOR UPDATE", [id])).rows[0];
+      if (!module) {
+        await c.query("ROLLBACK");
+        return Response.json({ error: "Module not found. Refresh and try again." }, { status: 404 });
+      }
+      if (d.action === "rename_module") {
+        await c.query("UPDATE modules SET name=$2 WHERE id=$1", [id, d.name]);
+      } else {
+        const moved = await c.query(
+          "UPDATE tasks SET module_id=NULL, updated_at=now() WHERE module_id=$1 RETURNING id", [id],
+        );
+        for (const task of moved.rows) {
+          await c.query("INSERT INTO events(task_id,kind,message) VALUES($1,'move_module',$2)", [
+            task.id, "Module changed from " + module.name + " to No module (module deleted)",
+          ]);
+        }
+        await c.query("DELETE FROM modules WHERE id=$1", [id]);
+      }
     } else if (d.action === "delete_project") {
       id = d.id;
       const project = (
@@ -213,6 +273,13 @@ export async function POST(req: Request) {
       await c.query("DELETE FROM tasks WHERE project_id=$1", [id]);
       await c.query("DELETE FROM modules WHERE project_id=$1", [id]);
       await c.query("DELETE FROM projects WHERE id=$1", [id]);
+    } else if (d.action === "delete_task") {
+      id = d.id;
+      const deleted = await c.query("DELETE FROM tasks WHERE id=$1 RETURNING id", [id]);
+      if (!deleted.rowCount) {
+        await c.query("ROLLBACK");
+        return Response.json({ error: "Task not found. Refresh and try again." }, { status: 404 });
+      }
     } else if (d.action === "task") {
       const assignee = d.member_id
         ? (await c.query("SELECT name FROM members WHERE id=$1", [d.member_id])).rows[0]

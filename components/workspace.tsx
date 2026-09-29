@@ -37,7 +37,7 @@ export function Workspace() {
       ? path.split("/")[4]
       : undefined;
   const [modal, setModal] = useState<string | null>(null);
-  const [status, setStatus] = useState("All statuses");
+  const [status, setStatus] = useState("not-completed");
   const [day, setDay] = useState("");
   useEffect(() => {
     setDay(localDay());
@@ -61,11 +61,11 @@ export function Workspace() {
                   : t.module_id === moduleId)),
           )
         : s.data.tasks;
+  const selectedStatus = section === "tasks" ? params.get("status") || "not-completed" : status;
   const tasks = base.filter(
     (t) =>
-      (section === "tasks"
-        ? !params.get("status") || t.status === params.get("status")
-        : status === "All statuses" || t.status === status) &&
+      (selectedStatus === "all" ||
+        (selectedStatus === "not-completed" ? t.status !== "Completed" : t.status === selectedStatus)) &&
       (section !== "tasks" || matchesFilters(t, params, s.data.members)) &&
       `${t.title} ${t.description}`
         .toLowerCase()
@@ -221,23 +221,20 @@ export function Workspace() {
                         )}
                         <select
                           aria-label="Filter by status"
-                          value={
-                            section === "tasks"
-                              ? params.get("status") || "All statuses"
-                              : status
-                          }
+                          value={selectedStatus}
                           onChange={(e) =>
                             section === "tasks"
                               ? setFilter(
                                   "status",
-                                  e.target.value === "All statuses"
+                                  e.target.value === "not-completed"
                                     ? ""
                                     : e.target.value,
                                 )
                               : setStatus(e.target.value)
                           }
                         >
-                          <option>All statuses</option>
+                          <option value="not-completed">Not completed</option>
+                          <option value="all">All statuses</option>
                           {statuses.map((v) => (
                             <option key={v}>{v}</option>
                           ))}
@@ -274,7 +271,7 @@ export function Workspace() {
                         <span>Status</span>
                         <span>Assigned to</span>
                         <span>Assigned for</span>
-                        <span>My Day</span>
+                        <span>Actions</span>
                       </div>
                       {tasks
                         .slice(0, section === "overview" ? 8 : undefined)

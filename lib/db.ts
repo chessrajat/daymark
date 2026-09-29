@@ -4,13 +4,21 @@ const schema = `
         CREATE TABLE IF NOT EXISTS projects (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL, description text NOT NULL DEFAULT '', created_at timestamptz NOT NULL DEFAULT now());
         CREATE TABLE IF NOT EXISTS teams (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL);
         CREATE TABLE IF NOT EXISTS members (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL, team_id uuid REFERENCES teams(id));
-        CREATE TABLE IF NOT EXISTS tasks (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), project_id uuid NOT NULL REFERENCES projects(id), title text NOT NULL, description text NOT NULL DEFAULT '', status text NOT NULL DEFAULT 'To do' CHECK (status IN ('To do','In progress','Blocked','Completed','Dropped')), priority text NOT NULL DEFAULT 'Medium', member_id uuid REFERENCES members(id), team_id uuid REFERENCES teams(id), assigned_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+        CREATE TABLE IF NOT EXISTS tasks (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), project_id uuid NOT NULL REFERENCES projects(id), title text NOT NULL, description text NOT NULL DEFAULT '', status text NOT NULL DEFAULT 'To do' CHECK (status IN ('To do','In progress','Blocked','Under verification','Completed','Dropped')), priority text NOT NULL DEFAULT 'Medium', member_id uuid REFERENCES members(id), team_id uuid REFERENCES teams(id), assigned_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
         CREATE TABLE IF NOT EXISTS modules (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE, name text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(id,project_id));
+        ALTER TABLE projects ADD COLUMN IF NOT EXISTS position integer;
+        ALTER TABLE modules ADD COLUMN IF NOT EXISTS position integer;
+        WITH ranked AS (SELECT id, row_number() OVER (ORDER BY created_at,id)::integer AS position FROM projects)
+          UPDATE projects p SET position=r.position FROM ranked r WHERE p.id=r.id AND p.position IS NULL;
+        WITH ranked AS (SELECT id, row_number() OVER (PARTITION BY project_id ORDER BY created_at,id)::integer AS position FROM modules)
+          UPDATE modules m SET position=r.position FROM ranked r WHERE m.id=r.id AND m.position IS NULL;
+        ALTER TABLE projects ALTER COLUMN position SET NOT NULL;
+        ALTER TABLE modules ALTER COLUMN position SET NOT NULL;
         ALTER TABLE tasks ADD COLUMN IF NOT EXISTS module_id uuid;
         ALTER TABLE tasks ADD COLUMN IF NOT EXISTS target_date date;
         ALTER TABLE tasks ADD COLUMN IF NOT EXISTS dependency_reason text;
         ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_status_check;
-        ALTER TABLE tasks ADD CONSTRAINT tasks_status_check CHECK (status IN ('To do','In progress','Blocked','Dependent','Completed','Dropped'));
+        ALTER TABLE tasks ADD CONSTRAINT tasks_status_check CHECK (status IN ('To do','In progress','Blocked','Dependent','Under verification','Completed','Dropped'));
         DO $$ BEGIN
           IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tasks_module_project_fk' AND conrelid='tasks'::regclass) THEN
             ALTER TABLE tasks ADD CONSTRAINT tasks_module_project_fk FOREIGN KEY(module_id,project_id) REFERENCES modules(id,project_id);

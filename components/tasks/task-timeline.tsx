@@ -1,4 +1,5 @@
 "use client";
+import { useLayoutEffect, useRef } from "react";
 import { AttachmentStrip } from "./attachment-strip";
 import { parseTaskActivity, type ActivityChange } from "@/lib/task-activity";
 import { type Event } from "@/lib/types";
@@ -80,15 +81,61 @@ function ChangeRow({ change }: { change: ActivityChange }) {
   );
 }
 
-export function TaskTimeline({ events, loading }: { events: Event[]; loading: boolean }) {
+export function TaskTimeline({ events, loading, hasOlder, loadingOlder, olderError, loadOlder }: {
+  events: Event[];
+  loading: boolean;
+  hasOlder: boolean;
+  loadingOlder: boolean;
+  olderError: string;
+  loadOlder: () => Promise<void>;
+}) {
   const items = timelineItems(events);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const previousLatest = useRef<string | undefined>(undefined);
+  const previousFirst = useRef<string | undefined>(undefined);
+  const scrollSnapshot = useRef<{ height: number; top: number } | null>(null);
+  const initialized = useRef(false);
+  const latest = events.at(-1)?.id;
+  const first = events[0]?.id;
+  useLayoutEffect(() => {
+    const timeline = timelineRef.current;
+    if (!timeline || loading) return;
+    if (!initialized.current || latest !== previousLatest.current) {
+      timeline.scrollTop = timeline.scrollHeight;
+      scrollSnapshot.current = null;
+      initialized.current = true;
+    } else if (first !== previousFirst.current && scrollSnapshot.current) {
+      const snapshot = scrollSnapshot.current;
+      timeline.scrollTop = snapshot.top + timeline.scrollHeight - snapshot.height;
+      scrollSnapshot.current = null;
+    }
+    previousLatest.current = latest;
+    previousFirst.current = first;
+  }, [events, loading, first, latest]);
+  function requestOlder() {
+    const timeline = timelineRef.current;
+    if (!timeline || loadingOlder || !hasOlder) return;
+    scrollSnapshot.current = { height: timeline.scrollHeight, top: timeline.scrollTop };
+    void loadOlder();
+  }
   return (
     <>
       <div className="timeline-heading">
         <h3>Activity</h3>
         <p>Updates and changes to this task</p>
       </div>
-      <div className="timeline" aria-label="Task activity timeline">
+      <div className="timeline" aria-label="Task activity timeline" ref={timelineRef}
+        onScroll={(e) => {
+          if (initialized.current && e.currentTarget.scrollTop < 80 && !olderError) requestOlder();
+        }}>
+        {hasOlder && (
+          <div className="activity-load-older">
+            {olderError && <p role="alert">{olderError}</p>}
+            <button type="button" disabled={loadingOlder} onClick={requestOlder}>
+              {loadingOlder ? "Loading older activity…" : olderError ? "Retry" : "Load older activity"}
+            </button>
+          </div>
+        )}
         {loading && <p className="muted">Loading timeline…</p>}
         {!loading && !items.length && <p className="muted">No activity yet.</p>}
         {items.map((item) => {
