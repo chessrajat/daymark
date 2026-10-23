@@ -5,6 +5,7 @@ import { type Member, type Task } from "@/lib/types";
 import Link from "next/link";
 import { DeleteMember } from "./delete-member";
 import { TeamAction } from "./team-action";
+import { MemberAccountAction } from "./member-account-action";
 const closed = (t: Task) => ["Completed", "Dropped"].includes(t.status);
 export function PersonRow({
   member: m,
@@ -39,6 +40,7 @@ export function PersonRow({
               View tasks
             </Link>
           </Button>
+          <MemberAccountAction member={m} />
           {m.team_id ? (
             <TeamAction id={m.id} name={m.name} teamId={m.team_id} />
           ) : (

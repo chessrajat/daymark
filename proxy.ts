@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { COOKIE, verifyToken } from "@/lib/auth";
+import { COOKIE, tokenSession } from "@/lib/auth";
 export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
   if (
@@ -8,7 +8,16 @@ export async function proxy(req: NextRequest) {
     path === "/api/auth/logout"
   )
     return NextResponse.next();
-  if (await verifyToken(req.cookies.get(COOKIE)?.value)) {
+  const session = await tokenSession(req.cookies.get(COOKIE)?.value);
+  if (session) {
+    if (session.role === "member" && !path.startsWith("/my-tasks") && !path.startsWith("/api/member/") && !path.startsWith("/api/attachments/")) {
+      if (path.startsWith("/api/")) return NextResponse.json({ error: "Access denied." }, { status: 403 });
+      return NextResponse.redirect(new URL("/my-tasks", req.url));
+    }
+    if (session.role === "master" && (path.startsWith("/my-tasks") || path.startsWith("/api/member/"))) {
+      if (path.startsWith("/api/")) return NextResponse.json({ error: "Access denied." }, { status: 403 });
+      return NextResponse.redirect(new URL("/", req.url));
+    }
     const r = NextResponse.next();
     r.headers.set("Cache-Control", "private, no-store");
     return r;

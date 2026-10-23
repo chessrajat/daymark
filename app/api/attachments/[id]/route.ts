@@ -1,13 +1,13 @@
 import { previewType } from "@/lib/attachment-preview";
-import { authGuard } from "@/lib/auth";
+import { currentSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const denied = await authGuard(req);
-  if (denied) return denied;
+  const session = await currentSession();
+  if (!session) return new Response("Please sign in", { status: 401 });
   const { id } = await params;
   if (!z.uuid().safeParse(id).success)
     return new Response("Invalid attachment", { status: 400 });
@@ -15,8 +15,10 @@ export async function GET(
     await (
       await db()
     ).query(
-      "SELECT name,content FROM attachments WHERE id=$1 UNION ALL SELECT name,content FROM note_attachments WHERE id=$1",
-      [id],
+      session.role === "master"
+        ? "SELECT name,content FROM attachments WHERE id=$1 UNION ALL SELECT name,content FROM note_attachments WHERE id=$1"
+        : "SELECT a.name,a.content FROM attachments a JOIN tasks t ON t.id=a.task_id WHERE a.id=$1 AND t.member_id=$2",
+      session.role === "master" ? [id] : [id, session.id],
     )
   ).rows[0];
   if (!a) return new Response("Not found", { status: 404 });
