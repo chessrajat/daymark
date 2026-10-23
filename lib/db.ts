@@ -4,6 +4,8 @@ const schema = `
         CREATE TABLE IF NOT EXISTS projects (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL, description text NOT NULL DEFAULT '', created_at timestamptz NOT NULL DEFAULT now());
         CREATE TABLE IF NOT EXISTS teams (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL);
         CREATE TABLE IF NOT EXISTS members (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL, team_id uuid REFERENCES teams(id));
+        CREATE TABLE IF NOT EXISTS member_accounts (member_id uuid PRIMARY KEY REFERENCES members(id) ON DELETE CASCADE, username text NOT NULL, password_hash text NOT NULL, credential_version uuid NOT NULL DEFAULT gen_random_uuid(), created_at timestamptz NOT NULL DEFAULT now());
+        CREATE UNIQUE INDEX IF NOT EXISTS member_accounts_username_unique ON member_accounts (lower(username));
         CREATE TABLE IF NOT EXISTS tasks (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), project_id uuid NOT NULL REFERENCES projects(id), title text NOT NULL, description text NOT NULL DEFAULT '', status text NOT NULL DEFAULT 'To do' CHECK (status IN ('To do','In progress','Blocked','Under verification','Completed','Dropped')), priority text NOT NULL DEFAULT 'Medium', member_id uuid REFERENCES members(id), team_id uuid REFERENCES teams(id), assigned_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
         CREATE TABLE IF NOT EXISTS modules (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE, name text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(id,project_id));
         ALTER TABLE projects ADD COLUMN IF NOT EXISTS position integer;

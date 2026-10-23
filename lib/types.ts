@@ -20,7 +20,7 @@ export type Module = {
   created_at: string;
 };
 export type Team = { id: string; name: string };
-export type Member = { id: string; name: string; team_id: string | null };
+export type Member = { id: string; name: string; team_id: string | null; account_username?: string | null };
 export type Task = {
   id: string;
   project_id: string;

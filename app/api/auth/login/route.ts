@@ -4,7 +4,10 @@ import {
   cookieOptions,
   validCredentials,
   issueToken,
+  issueMemberToken,
 } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { verifyMemberPassword } from "@/lib/member-password";
 // Single-user, single-process login throttle. Never trust caller-supplied IP headers.
 const attempts: number[] = [];
 export async function POST(req: Request) {
@@ -36,16 +39,18 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   try {
-    if (!validCredentials(body.username, body.password))
-      return NextResponse.json(
-        { error: "Invalid username or password." },
-        { status: 401 },
-      );
+    const master = validCredentials(body.username, body.password);
+    const account = master ? null : (await (await db()).query(
+      "SELECT member_id,password_hash,credential_version FROM member_accounts WHERE lower(username)=lower($1)",
+      [body.username],
+    )).rows[0];
+    if (!master && (!account || !(await verifyMemberPassword(body.password, account.password_hash))))
+      return NextResponse.json({ error: "Invalid username or password." }, { status: 401 });
     const r = NextResponse.json(
-      { ok: true },
+      { ok: true, role: master ? "master" : "member" },
       { headers: { "Cache-Control": "no-store" } },
     );
-    r.cookies.set(COOKIE, await issueToken(), cookieOptions());
+    r.cookies.set(COOKIE, master ? await issueToken() : await issueMemberToken(account.member_id, account.credential_version), cookieOptions());
     return r;
   } catch {
     return NextResponse.json(

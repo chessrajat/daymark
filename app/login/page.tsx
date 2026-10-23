@@ -19,6 +19,10 @@ export default function Login() {
       });
       const data = await r.json();
       if (!r.ok) throw Error(data.error);
+      if (data.role === "member") {
+        window.location.assign("/my-tasks");
+        return;
+      }
       const next =
         new URLSearchParams(window.location.search).get("next") || "/";
       const target = new URL(next, window.location.origin);

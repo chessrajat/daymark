@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     const [projects, teams, members, tasks, modules] = await Promise.all([
       p.query("SELECT * FROM projects ORDER BY position, created_at, id"),
       p.query("SELECT * FROM teams ORDER BY name"),
-      p.query("SELECT * FROM members ORDER BY name"),
+      p.query("SELECT m.*, a.username AS account_username FROM members m LEFT JOIN member_accounts a ON a.member_id=m.id ORDER BY m.name"),
       p.query(
         "SELECT t.*, to_char(t.target_date, 'YYYY-MM-DD') AS target_date, COALESCE((SELECT json_agg(to_char(day, 'YYYY-MM-DD')) FROM my_days WHERE task_id=t.id),'[]'::json) AS my_days FROM tasks t ORDER BY created_at DESC",
       ),
